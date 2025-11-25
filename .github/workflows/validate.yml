@@ -1,0 +1,50 @@
+name: Validate OpenAPI Spec
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'openapi.yaml'
+      - 'schemas/**'
+      - 'paths/**'
+      - '.spectral.yaml'
+      - '.redocly.yaml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'openapi.yaml'
+      - 'schemas/**'
+      - 'paths/**'
+      - '.spectral.yaml'
+      - '.redocly.yaml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Bundle spec
+        run: |
+          mkdir -p dist
+          npx @redocly/cli bundle openapi.yaml -o dist/openapi.yaml --config .redocly.yaml
+
+      - name: Lint with Spectral
+        uses: stoplightio/spectral-action@latest
+        with:
+          file_glob: 'dist/openapi.yaml'
+          spectral_ruleset: '.spectral.yaml'
+
+      - name: Validate with Redocly
+        run: npx @redocly/cli lint openapi.yaml --config .redocly.yaml
+
+      - name: Upload bundled spec
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-bundled
+          path: dist/openapi.yaml

@@ -1,0 +1,773 @@
+# Admin panel and management (requires admin role)
+
+/admin/dashboard:
+  get:
+    tags:
+    - admin
+    summary: Get admin dashboard
+    description: Get admin dashboard with overview statistics
+    operationId: getAdminDashboard
+    security:
+    - bearerAuth: []
+    responses:
+      '200':
+        description: Admin dashboard data
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/AdminDashboard'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+
+# User management
+/admin/users:
+  get:
+    tags:
+    - admin
+    summary: List all users
+    description: Get paginated list of all users in the organization
+    operationId: listUsers
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+    - name: offset
+      in: query
+      schema:
+        type: integer
+        default: 0
+    - name: search
+      in: query
+      schema:
+        type: string
+    - name: role
+      in: query
+      schema:
+        $ref: '../openapi.yaml#/components/schemas/UserRole'
+    - name: status
+      in: query
+      schema:
+        $ref: '../openapi.yaml#/components/schemas/UserStatus'
+    - name: department
+      in: query
+      schema:
+        type: string
+    - name: sort
+      in: query
+      schema:
+        type: string
+        enum: [name, email, created_at, last_login_at]
+        default: created_at
+    - name: order
+      in: query
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: desc
+    responses:
+      '200':
+        description: Paginated list of users
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/PaginatedUsers'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+  post:
+    tags:
+    - admin
+    summary: Create user
+    description: Create a new user manually
+    operationId: createUser
+    security:
+    - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/UserCreate'
+    responses:
+      '201':
+        description: User created
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/User'
+      '400':
+        $ref: '../openapi.yaml#/components/responses/BadRequest'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '409':
+        $ref: '../openapi.yaml#/components/responses/Conflict'
+
+/admin/users/bulk:
+  post:
+    tags:
+    - admin
+    summary: Bulk import users
+    description: Import multiple users via CSV or JSON
+    operationId: bulkImportUsers
+    security:
+    - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/UserBulkImport'
+        multipart/form-data:
+          schema:
+            type: object
+            required: [file]
+            properties:
+              file:
+                type: string
+                format: binary
+              send_invites:
+                type: boolean
+                default: true
+    responses:
+      '200':
+        description: Import results
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/UserBulkImportResult'
+      '400':
+        $ref: '../openapi.yaml#/components/responses/BadRequest'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+
+/admin/users/{user_id}:
+  get:
+    tags:
+    - admin
+    summary: Get user details
+    operationId: getUser
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/UserId'
+    responses:
+      '200':
+        description: User details
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/User'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+  put:
+    tags:
+    - admin
+    summary: Update user
+    operationId: updateUser
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/UserId'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/UserUpdate'
+    responses:
+      '200':
+        description: Updated user
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/User'
+      '400':
+        $ref: '../openapi.yaml#/components/responses/BadRequest'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+  delete:
+    tags:
+    - admin
+    summary: Deactivate user
+    operationId: deactivateUser
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/UserId'
+    responses:
+      '204':
+        description: User deactivated
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+
+/admin/users/{user_id}/usage:
+  get:
+    tags:
+    - admin
+    summary: Get user usage
+    operationId: getUserUsage
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/UserId'
+    - name: period
+      in: query
+      schema:
+        type: string
+        enum: [day, week, month, year]
+        default: month
+    responses:
+      '200':
+        description: User usage statistics
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/CostSummary'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+
+# Organization
+/admin/organization:
+  get:
+    tags:
+    - admin
+    summary: Get organization settings
+    operationId: getOrganization
+    security:
+    - bearerAuth: []
+    responses:
+      '200':
+        description: Organization settings
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Organization'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+  put:
+    tags:
+    - admin
+    summary: Update organization settings
+    operationId: updateOrganization
+    security:
+    - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/OrganizationUpdate'
+    responses:
+      '200':
+        description: Updated organization
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Organization'
+      '400':
+        $ref: '../openapi.yaml#/components/responses/BadRequest'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+
+# API keys
+/admin/api-keys:
+  get:
+    tags:
+    - admin
+    summary: List API keys
+    operationId: listApiKeys
+    security:
+    - bearerAuth: []
+    responses:
+      '200':
+        description: List of API keys
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../openapi.yaml#/components/schemas/ApiKey'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+  post:
+    tags:
+    - admin
+    summary: Add API key
+    operationId: createApiKey
+    security:
+    - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/ApiKeyCreate'
+    responses:
+      '201':
+        description: API key added
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/ApiKey'
+      '400':
+        $ref: '../openapi.yaml#/components/responses/BadRequest'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+
+/admin/api-keys/{key_id}:
+  delete:
+    tags:
+    - admin
+    summary: Delete API key
+    operationId: deleteApiKey
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/KeyId'
+    responses:
+      '204':
+        description: API key deleted
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+
+/admin/api-keys/{key_id}/validate:
+  post:
+    tags:
+    - admin
+    summary: Validate API key
+    operationId: validateApiKey
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/KeyId'
+    responses:
+      '200':
+        description: Validation result
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                valid:
+                  type: boolean
+                message:
+                  type: string
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+
+# SSO providers
+/admin/sso-providers:
+  get:
+    tags:
+    - admin
+    summary: List SSO providers
+    operationId: listSsoProviders
+    security:
+    - bearerAuth: []
+    responses:
+      '200':
+        description: List of SSO provider configurations
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../openapi.yaml#/components/schemas/OidcProviderConfig'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+  post:
+    tags:
+    - admin
+    summary: Add SSO provider
+    operationId: createSsoProvider
+    security:
+    - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/OidcProviderConfigCreate'
+    responses:
+      '201':
+        description: SSO provider configured
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/OidcProviderConfig'
+      '400':
+        $ref: '../openapi.yaml#/components/responses/BadRequest'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+
+/admin/sso-providers/{provider_id}:
+  get:
+    tags:
+    - admin
+    summary: Get SSO provider
+    operationId: getSsoProvider
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/ProviderId'
+    responses:
+      '200':
+        description: SSO provider configuration
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/OidcProviderConfig'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+  put:
+    tags:
+    - admin
+    summary: Update SSO provider
+    operationId: updateSsoProvider
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/ProviderId'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/OidcProviderConfigCreate'
+    responses:
+      '200':
+        description: Updated SSO provider
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/OidcProviderConfig'
+      '400':
+        $ref: '../openapi.yaml#/components/responses/BadRequest'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+  delete:
+    tags:
+    - admin
+    summary: Delete SSO provider
+    operationId: deleteSsoProvider
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/ProviderId'
+    responses:
+      '204':
+        description: SSO provider deleted
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+
+/admin/sso-providers/{provider_id}/test:
+  post:
+    tags:
+    - admin
+    summary: Test SSO provider
+    operationId: testSsoProvider
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/ProviderId'
+    responses:
+      '200':
+        description: Test result
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+                discovery_url:
+                  type: string
+                  format: uri
+                endpoints_found:
+                  type: object
+                  properties:
+                    authorization:
+                      type: boolean
+                    token:
+                      type: boolean
+                    userinfo:
+                      type: boolean
+                    jwks:
+                      type: boolean
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+
+# Rate limits
+/admin/rate-limits:
+  get:
+    tags:
+    - admin
+    summary: List rate limit configurations
+    operationId: listRateLimits
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: scope
+      in: query
+      schema:
+        $ref: '../openapi.yaml#/components/schemas/RateLimitScope'
+    responses:
+      '200':
+        description: List of rate limit configurations
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../openapi.yaml#/components/schemas/RateLimitConfig'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+  post:
+    tags:
+    - admin
+    summary: Create rate limit
+    operationId: createRateLimit
+    security:
+    - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/RateLimitConfigCreate'
+    responses:
+      '201':
+        description: Rate limit created
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/RateLimitConfig'
+      '400':
+        $ref: '../openapi.yaml#/components/responses/BadRequest'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+
+/admin/rate-limits/{limit_id}:
+  put:
+    tags:
+    - admin
+    summary: Update rate limit
+    operationId: updateRateLimit
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/LimitId'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/RateLimitConfigCreate'
+    responses:
+      '200':
+        description: Updated rate limit
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/RateLimitConfig'
+      '400':
+        $ref: '../openapi.yaml#/components/responses/BadRequest'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+  delete:
+    tags:
+    - admin
+    summary: Delete rate limit
+    operationId: deleteRateLimit
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/LimitId'
+    responses:
+      '204':
+        description: Rate limit deleted
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+
+# Budgets
+/admin/budgets:
+  get:
+    tags:
+    - admin
+    summary: List budgets
+    operationId: listBudgets
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: scope
+      in: query
+      schema:
+        $ref: '../openapi.yaml#/components/schemas/RateLimitScope'
+    responses:
+      '200':
+        description: List of budgets
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '../openapi.yaml#/components/schemas/Budget'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+  post:
+    tags:
+    - admin
+    summary: Create budget
+    operationId: createBudget
+    security:
+    - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/BudgetCreate'
+    responses:
+      '201':
+        description: Budget created
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Budget'
+      '400':
+        $ref: '../openapi.yaml#/components/responses/BadRequest'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+
+/admin/budgets/{budget_id}:
+  put:
+    tags:
+    - admin
+    summary: Update budget
+    operationId: updateBudget
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/BudgetId'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/BudgetCreate'
+    responses:
+      '200':
+        description: Updated budget
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Budget'
+      '400':
+        $ref: '../openapi.yaml#/components/responses/BadRequest'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+  delete:
+    tags:
+    - admin
+    summary: Delete budget
+    operationId: deleteBudget
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/BudgetId'
+    responses:
+      '204':
+        description: Budget deleted
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'

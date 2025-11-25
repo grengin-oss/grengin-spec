@@ -1,0 +1,190 @@
+# Analytics and Audit domain schemas
+
+# Cost Analytics
+CostSummary:
+  type: object
+  properties:
+    total_cost:
+      type: number
+      format: float
+    total_requests:
+      type: integer
+    total_tokens:
+      type: integer
+    input_tokens:
+      type: integer
+    output_tokens:
+      type: integer
+    period_start:
+      type: string
+      format: date-time
+    period_end:
+      type: string
+      format: date-time
+
+CostByDimension:
+  type: object
+  properties:
+    dimension:
+      type: string
+      description: The dimension value (user email, department name, model name, etc.)
+    cost:
+      type: number
+      format: float
+    requests:
+      type: integer
+    tokens:
+      type: integer
+    percentage:
+      type: number
+      format: float
+
+CostBreakdown:
+  type: object
+  properties:
+    summary:
+      $ref: '#/CostSummary'
+    by_user:
+      type: array
+      items:
+        $ref: '#/CostByDimension'
+    by_department:
+      type: array
+      items:
+        $ref: '#/CostByDimension'
+    by_model:
+      type: array
+      items:
+        $ref: '#/CostByDimension'
+    by_provider:
+      type: array
+      items:
+        $ref: '#/CostByDimension'
+
+CostTrend:
+  type: object
+  properties:
+    date:
+      type: string
+      format: date
+    cost:
+      type: number
+      format: float
+    requests:
+      type: integer
+    tokens:
+      type: integer
+
+# Usage Analytics
+UsageStats:
+  type: object
+  properties:
+    active_users:
+      type: integer
+      description: Number of users who made requests in the period
+    total_users:
+      type: integer
+    total_conversations:
+      type: integer
+    total_messages:
+      type: integer
+    avg_messages_per_conversation:
+      type: number
+      format: float
+    avg_requests_per_user:
+      type: number
+      format: float
+    most_used_models:
+      type: array
+      items:
+        type: object
+        properties:
+          model:
+            type: string
+          requests:
+            type: integer
+          percentage:
+            type: number
+            format: float
+
+# Audit Logging
+AuditAction:
+  type: string
+  enum:
+    - user.login
+    - user.logout
+    - user.created
+    - user.updated
+    - user.deactivated
+    - chat.created
+    - chat.message_sent
+    - chat.deleted
+    - file.uploaded
+    - file.deleted
+    - settings.updated
+    - admin.user_created
+    - admin.user_updated
+    - admin.user_deactivated
+    - admin.settings_updated
+    - admin.api_key_created
+    - admin.api_key_deleted
+    - admin.budget_updated
+    - admin.rate_limit_updated
+
+AuditLog:
+  type: object
+  required:
+    - id
+    - action
+    - timestamp
+  properties:
+    id:
+      type: string
+      format: uuid
+    action:
+      $ref: '#/AuditAction'
+    user_id:
+      type: string
+      format: uuid
+      nullable: true
+    user_email:
+      type: string
+      nullable: true
+    resource_type:
+      type: string
+      nullable: true
+    resource_id:
+      type: string
+      nullable: true
+    details:
+      type: object
+      description: Additional details about the action
+      nullable: true
+    ip_address:
+      type: string
+      nullable: true
+    user_agent:
+      type: string
+      nullable: true
+    timestamp:
+      type: string
+      format: date-time
+
+PaginatedAuditLogs:
+  type: object
+  required:
+    - logs
+    - total
+    - limit
+    - offset
+  properties:
+    logs:
+      type: array
+      items:
+        $ref: '#/AuditLog'
+    total:
+      type: integer
+    limit:
+      type: integer
+    offset:
+      type: integer

@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm run dev)",
+      "Bash(curl:*)",
+      "Bash(npx tsc:*)",
+      "Bash(timeout 5 pnpm run dev:*)",
+      "Bash(mkdir:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

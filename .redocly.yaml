@@ -1,0 +1,16 @@
+# Redocly configuration for OpenAPI 3.2
+# Note: schemas use `nullable: true` (3.0 style) - migrate to type arrays when ready
+
+apis:
+  main:
+    root: openapi.yaml
+
+rules:
+  # Disable struct rule that flags `nullable` (3.0 -> 3.1 migration)
+  struct: off
+
+  # Keep other validation rules
+  info-license-strict: warn
+  no-server-example.com: warn
+  operation-4xx-response: warn
+  no-unused-components: warn

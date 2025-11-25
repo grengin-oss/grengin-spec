@@ -1,0 +1,358 @@
+# Admin domain schemas - Organization, API Keys, Rate Limits, Budgets
+
+# Organization
+Organization:
+  type: object
+  required:
+    - id
+    - name
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    domain:
+      type: string
+      description: Primary domain for SSO
+    allowed_domains:
+      type: array
+      items:
+        type: string
+      description: List of allowed email domains
+    logo_url:
+      type: string
+      format: uri
+      nullable: true
+    settings:
+      $ref: '#/OrganizationSettings'
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+
+OrganizationSettings:
+  type: object
+  properties:
+    sso_providers:
+      type: array
+      items:
+        $ref: 'auth.yaml#/AuthProvider'
+      description: Enabled SSO providers
+    default_model:
+      type: string
+    default_provider:
+      type: string
+    allowed_models:
+      type: array
+      items:
+        type: string
+      description: List of allowed model keys
+    data_retention_days:
+      type: integer
+      default: 90
+    require_mfa:
+      type: boolean
+      default: false
+
+OrganizationUpdate:
+  type: object
+  properties:
+    name:
+      type: string
+    allowed_domains:
+      type: array
+      items:
+        type: string
+    logo_url:
+      type: string
+      format: uri
+    settings:
+      $ref: '#/OrganizationSettings'
+
+# API Keys
+ApiKey:
+  type: object
+  required:
+    - id
+    - provider
+    - name
+    - created_at
+  properties:
+    id:
+      type: string
+      format: uuid
+    provider:
+      $ref: 'auth.yaml#/ApiKeyProvider'
+    name:
+      type: string
+      description: Friendly name for the API key
+    key_preview:
+      type: string
+      description: Last 4 characters of the key
+    is_valid:
+      type: boolean
+      description: Whether the key has been validated
+    last_used_at:
+      type: string
+      format: date-time
+      nullable: true
+    created_at:
+      type: string
+      format: date-time
+    created_by:
+      type: string
+      format: uuid
+      description: User ID who created the key
+
+ApiKeyCreate:
+  type: object
+  required:
+    - provider
+    - api_key
+  properties:
+    provider:
+      $ref: 'auth.yaml#/ApiKeyProvider'
+    name:
+      type: string
+    api_key:
+      type: string
+      description: The actual API key (write-only, never returned)
+
+# Rate Limits
+RateLimitScope:
+  type: string
+  enum:
+    - user
+    - department
+    - organization
+
+RateLimitConfig:
+  type: object
+  required:
+    - id
+    - scope
+    - requests_per_minute
+  properties:
+    id:
+      type: string
+      format: uuid
+    scope:
+      $ref: '#/RateLimitScope'
+    scope_id:
+      type: string
+      description: User ID, department name, or org ID depending on scope
+      nullable: true
+    requests_per_minute:
+      type: integer
+      minimum: 1
+    requests_per_hour:
+      type: integer
+      minimum: 1
+    requests_per_day:
+      type: integer
+      minimum: 1
+    tokens_per_day:
+      type: integer
+      minimum: 1
+      nullable: true
+    is_active:
+      type: boolean
+      default: true
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+
+RateLimitConfigCreate:
+  type: object
+  required:
+    - scope
+    - requests_per_minute
+  properties:
+    scope:
+      $ref: '#/RateLimitScope'
+    scope_id:
+      type: string
+      nullable: true
+    requests_per_minute:
+      type: integer
+      minimum: 1
+    requests_per_hour:
+      type: integer
+      minimum: 1
+    requests_per_day:
+      type: integer
+      minimum: 1
+    tokens_per_day:
+      type: integer
+      minimum: 1
+      nullable: true
+
+RateLimitStatus:
+  type: object
+  properties:
+    requests_remaining:
+      type: integer
+    requests_limit:
+      type: integer
+    tokens_remaining:
+      type: integer
+      nullable: true
+    tokens_limit:
+      type: integer
+      nullable: true
+    reset_at:
+      type: string
+      format: date-time
+
+# Budgets
+BudgetPeriod:
+  type: string
+  enum:
+    - daily
+    - weekly
+    - monthly
+
+Budget:
+  type: object
+  required:
+    - id
+    - scope
+    - limit_amount
+    - period
+  properties:
+    id:
+      type: string
+      format: uuid
+    scope:
+      $ref: '#/RateLimitScope'
+    scope_id:
+      type: string
+      nullable: true
+    limit_amount:
+      type: number
+      format: float
+      description: Budget limit in USD
+    period:
+      $ref: '#/BudgetPeriod'
+    current_spend:
+      type: number
+      format: float
+      description: Current spend in the period
+    alert_thresholds:
+      type: array
+      items:
+        type: integer
+      description: Percentage thresholds for alerts (e.g., [50, 75, 90, 100])
+      default:
+        - 50
+        - 75
+        - 90
+        - 100
+    action_on_exceed:
+      type: string
+      enum:
+        - warn
+        - throttle
+        - block
+      default: warn
+    is_active:
+      type: boolean
+      default: true
+    period_start:
+      type: string
+      format: date-time
+    period_end:
+      type: string
+      format: date-time
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+
+BudgetCreate:
+  type: object
+  required:
+    - scope
+    - limit_amount
+    - period
+  properties:
+    scope:
+      $ref: '#/RateLimitScope'
+    scope_id:
+      type: string
+      nullable: true
+    limit_amount:
+      type: number
+      format: float
+    period:
+      $ref: '#/BudgetPeriod'
+    alert_thresholds:
+      type: array
+      items:
+        type: integer
+    action_on_exceed:
+      type: string
+      enum:
+        - warn
+        - throttle
+        - block
+
+BudgetStatus:
+  type: object
+  properties:
+    budget_id:
+      type: string
+      format: uuid
+    limit_amount:
+      type: number
+      format: float
+    current_spend:
+      type: number
+      format: float
+    percentage_used:
+      type: number
+      format: float
+    remaining:
+      type: number
+      format: float
+    period_end:
+      type: string
+      format: date-time
+    status:
+      type: string
+      enum:
+        - ok
+        - warning
+        - exceeded
+
+# Admin Dashboard
+AdminDashboard:
+  type: object
+  properties:
+    users:
+      type: object
+      properties:
+        total:
+          type: integer
+        active:
+          type: integer
+        new_this_month:
+          type: integer
+    usage:
+      $ref: 'analytics.yaml#/UsageStats'
+    costs:
+      $ref: 'analytics.yaml#/CostSummary'
+    cost_trend:
+      type: array
+      items:
+        $ref: 'analytics.yaml#/CostTrend'
+    system_health:
+      $ref: 'common.yaml#/HealthResponse'

@@ -1,0 +1,201 @@
+# Chat and conversation domain schemas
+Conversation:
+  type: object
+  required:
+    - id
+    - title
+    - created_at
+  properties:
+    id:
+      type: string
+      format: uuid
+    title:
+      type: string
+    archived:
+      type: boolean
+      default: false
+    archived_at:
+      type: string
+      format: date-time
+      nullable: true
+    model:
+      type: string
+      nullable: true
+      description: Last used model in conversation
+    total_tokens:
+      type: integer
+      description: Total tokens used in conversation
+    total_cost:
+      type: number
+      format: float
+      description: Total cost of conversation in USD
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+
+MessageRole:
+  type: string
+  enum:
+    - user
+    - assistant
+    - system
+    - tool
+
+MessagePart:
+  type: object
+  properties:
+    text:
+      type: string
+    files:
+      type: array
+      items:
+        $ref: '#/FileAttachment'
+
+FileAttachment:
+  type: object
+  required:
+    - id
+    - name
+    - type
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    type:
+      type: string
+      description: MIME type
+    size:
+      type: integer
+      format: int64
+
+TokenUsage:
+  type: object
+  properties:
+    input_tokens:
+      type: integer
+    output_tokens:
+      type: integer
+    total_tokens:
+      type: integer
+
+Message:
+  type: object
+  required:
+    - id
+    - role
+    - parts
+    - created_at
+  properties:
+    id:
+      type: string
+      format: uuid
+    conversation_id:
+      type: string
+      format: uuid
+    role:
+      $ref: '#/MessageRole'
+    parts:
+      $ref: '#/MessagePart'
+    model:
+      type: string
+      nullable: true
+    model_params:
+      type: object
+      nullable: true
+    tool_calls:
+      type: array
+      items:
+        type: object
+      nullable: true
+    tool_results:
+      type: array
+      items:
+        type: object
+      nullable: true
+    usage:
+      $ref: '#/TokenUsage'
+    cost:
+      type: number
+      format: float
+      description: Cost of this message in USD
+      nullable: true
+    request_id:
+      type: string
+      nullable: true
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+
+ConversationDetail:
+  allOf:
+    - $ref: '#/Conversation'
+    - type: object
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/Message'
+
+ChatRequest:
+  type: object
+  required:
+    - messages
+  properties:
+    provider:
+      type: string
+      nullable: true
+    model_name:
+      type: string
+      nullable: true
+    messages:
+      type: array
+      items:
+        type: object
+        required:
+          - role
+          - content
+        properties:
+          role:
+            $ref: '#/MessageRole'
+          content:
+            type: string
+          files:
+            type: array
+            items:
+              $ref: '#/FileAttachment'
+    web_search:
+      type: boolean
+      default: false
+    config:
+      type: object
+      nullable: true
+    conversation_id:
+      type: string
+      format: uuid
+      nullable: true
+    selected_tools:
+      type: array
+      items:
+        type: string
+      nullable: true
+
+ConversationList:
+  type: object
+  required:
+    - conversations
+    - total
+  properties:
+    conversations:
+      type: array
+      items:
+        $ref: '#/Conversation'
+    total:
+      type: integer

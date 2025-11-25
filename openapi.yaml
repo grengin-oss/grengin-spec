@@ -1,0 +1,475 @@
+openapi: 3.2.0
+info:
+  title: Grengin
+  version: 1.0.0
+  description: AI-native business growth engine
+  contact:
+    name: Grengin Team
+    email: support@grengin.com
+  license:
+    name: Dual License (Community/Enterprise)
+servers:
+- url: http://localhost:3000
+  description: Mock server
+- url: http://localhost:8080
+  description: Local development
+- url: https://api.grengin.com
+  description: Hosted version for direct access to individuals
+security:
+- bearerAuth: []
+tags:
+- name: health
+  description: Health check endpoints
+- name: auth
+  description: Authentication and authorization (SSO via OpenID Connect)
+- name: chat
+  description: Chat conversations and messages
+- name: files
+  description: File upload and management
+- name: settings
+  description: User settings and preferences
+- name: models
+  description: AI models and providers
+- name: user
+  description: User profile and information
+- name: admin
+  description: Admin panel and management (requires admin role)
+- name: analytics
+  description: Usage analytics and cost tracking
+- name: audit
+  description: Audit logging and compliance
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtained via OpenID Connect authentication.
+
+        Flow:
+        1. Client calls GET /auth/{provider} to get authorization URL
+        2. User authenticates with their identity provider
+        3. Provider redirects to /auth/{provider}/callback with authorization code
+        4. Server exchanges code for tokens and returns JWT
+
+        The JWT is validated against the issuer's JWKS endpoint.
+        Supported providers are configured via /admin/sso-providers.
+  schemas:
+    # Common schemas
+    Error:
+      $ref: 'schemas/common.yaml#/Error'
+    ValidationError:
+      $ref: 'schemas/common.yaml#/ValidationError'
+    HealthResponse:
+      $ref: 'schemas/common.yaml#/HealthResponse'
+    FileStatus:
+      $ref: 'schemas/common.yaml#/FileStatus'
+    VirusScanStatus:
+      $ref: 'schemas/common.yaml#/VirusScanStatus'
+    UserFile:
+      $ref: 'schemas/common.yaml#/UserFile'
+    PaginatedFiles:
+      $ref: 'schemas/common.yaml#/PaginatedFiles'
+    ModelInfo:
+      $ref: 'schemas/common.yaml#/ModelInfo'
+    ProviderInfo:
+      $ref: 'schemas/common.yaml#/ProviderInfo'
+    ModelSelection:
+      $ref: 'schemas/common.yaml#/ModelSelection'
+    ModelSettings:
+      $ref: 'schemas/common.yaml#/ModelSettings'
+    UserSettings:
+      $ref: 'schemas/common.yaml#/UserSettings'
+
+    # Auth schemas
+    AuthProvider:
+      $ref: 'schemas/auth.yaml#/AuthProvider'
+    AuthInitResponse:
+      $ref: 'schemas/auth.yaml#/AuthInitResponse'
+    AuthCallbackRequest:
+      $ref: 'schemas/auth.yaml#/AuthCallbackRequest'
+    AuthTokenResponse:
+      $ref: 'schemas/auth.yaml#/AuthTokenResponse'
+    RefreshTokenRequest:
+      $ref: 'schemas/auth.yaml#/RefreshTokenRequest'
+    OidcProviderConfig:
+      $ref: 'schemas/auth.yaml#/OidcProviderConfig'
+    OidcProviderConfigCreate:
+      $ref: 'schemas/auth.yaml#/OidcProviderConfigCreate'
+    OnboardingStep:
+      $ref: 'schemas/auth.yaml#/OnboardingStep'
+    OnboardingStatus:
+      $ref: 'schemas/auth.yaml#/OnboardingStatus'
+    OnboardingStartRequest:
+      $ref: 'schemas/auth.yaml#/OnboardingStartRequest'
+    OnboardingStartResponse:
+      $ref: 'schemas/auth.yaml#/OnboardingStartResponse'
+    CompanySize:
+      $ref: 'schemas/auth.yaml#/CompanySize'
+    Industry:
+      $ref: 'schemas/auth.yaml#/Industry'
+    OrganizationSetupRequest:
+      $ref: 'schemas/auth.yaml#/OrganizationSetupRequest'
+    SuperAdminCreateRequest:
+      $ref: 'schemas/auth.yaml#/SuperAdminCreateRequest'
+    ApiKeyProvider:
+      $ref: 'schemas/auth.yaml#/ApiKeyProvider'
+    LlmProviderSetupRequest:
+      $ref: 'schemas/auth.yaml#/LlmProviderSetupRequest'
+    ValidateApiKeyRequest:
+      $ref: 'schemas/auth.yaml#/ValidateApiKeyRequest'
+    ValidateApiKeyResponse:
+      $ref: 'schemas/auth.yaml#/ValidateApiKeyResponse'
+    OnboardingSsoRequest:
+      $ref: 'schemas/auth.yaml#/OnboardingSsoRequest'
+    OnboardingCompleteResponse:
+      $ref: 'schemas/auth.yaml#/OnboardingCompleteResponse'
+    PasswordLoginRequest:
+      $ref: 'schemas/auth.yaml#/PasswordLoginRequest'
+    PasswordLoginResponse:
+      $ref: 'schemas/auth.yaml#/PasswordLoginResponse'
+    MfaSetupResponse:
+      $ref: 'schemas/auth.yaml#/MfaSetupResponse'
+    MfaVerifyRequest:
+      $ref: 'schemas/auth.yaml#/MfaVerifyRequest'
+    MfaRecoveryRequest:
+      $ref: 'schemas/auth.yaml#/MfaRecoveryRequest'
+    PasswordForgotRequest:
+      $ref: 'schemas/auth.yaml#/PasswordForgotRequest'
+    PasswordResetRequest:
+      $ref: 'schemas/auth.yaml#/PasswordResetRequest'
+    PasswordChangeRequest:
+      $ref: 'schemas/auth.yaml#/PasswordChangeRequest'
+
+    # User schemas
+    UserRole:
+      $ref: 'schemas/user.yaml#/UserRole'
+    UserStatus:
+      $ref: 'schemas/user.yaml#/UserStatus'
+    User:
+      $ref: 'schemas/user.yaml#/User'
+    UserCreate:
+      $ref: 'schemas/user.yaml#/UserCreate'
+    UserUpdate:
+      $ref: 'schemas/user.yaml#/UserUpdate'
+    UserBulkImport:
+      $ref: 'schemas/user.yaml#/UserBulkImport'
+    UserBulkImportResult:
+      $ref: 'schemas/user.yaml#/UserBulkImportResult'
+    PaginatedUsers:
+      $ref: 'schemas/user.yaml#/PaginatedUsers'
+
+    # Chat schemas
+    Conversation:
+      $ref: 'schemas/chat.yaml#/Conversation'
+    MessageRole:
+      $ref: 'schemas/chat.yaml#/MessageRole'
+    MessagePart:
+      $ref: 'schemas/chat.yaml#/MessagePart'
+    FileAttachment:
+      $ref: 'schemas/chat.yaml#/FileAttachment'
+    TokenUsage:
+      $ref: 'schemas/chat.yaml#/TokenUsage'
+    Message:
+      $ref: 'schemas/chat.yaml#/Message'
+    ConversationDetail:
+      $ref: 'schemas/chat.yaml#/ConversationDetail'
+    ChatRequest:
+      $ref: 'schemas/chat.yaml#/ChatRequest'
+    ConversationList:
+      $ref: 'schemas/chat.yaml#/ConversationList'
+
+    # Admin schemas
+    Organization:
+      $ref: 'schemas/admin.yaml#/Organization'
+    OrganizationSettings:
+      $ref: 'schemas/admin.yaml#/OrganizationSettings'
+    OrganizationUpdate:
+      $ref: 'schemas/admin.yaml#/OrganizationUpdate'
+    ApiKey:
+      $ref: 'schemas/admin.yaml#/ApiKey'
+    ApiKeyCreate:
+      $ref: 'schemas/admin.yaml#/ApiKeyCreate'
+    RateLimitScope:
+      $ref: 'schemas/admin.yaml#/RateLimitScope'
+    RateLimitConfig:
+      $ref: 'schemas/admin.yaml#/RateLimitConfig'
+    RateLimitConfigCreate:
+      $ref: 'schemas/admin.yaml#/RateLimitConfigCreate'
+    RateLimitStatus:
+      $ref: 'schemas/admin.yaml#/RateLimitStatus'
+    BudgetPeriod:
+      $ref: 'schemas/admin.yaml#/BudgetPeriod'
+    Budget:
+      $ref: 'schemas/admin.yaml#/Budget'
+    BudgetCreate:
+      $ref: 'schemas/admin.yaml#/BudgetCreate'
+    BudgetStatus:
+      $ref: 'schemas/admin.yaml#/BudgetStatus'
+    AdminDashboard:
+      $ref: 'schemas/admin.yaml#/AdminDashboard'
+
+    # Analytics schemas
+    CostSummary:
+      $ref: 'schemas/analytics.yaml#/CostSummary'
+    CostByDimension:
+      $ref: 'schemas/analytics.yaml#/CostByDimension'
+    CostBreakdown:
+      $ref: 'schemas/analytics.yaml#/CostBreakdown'
+    CostTrend:
+      $ref: 'schemas/analytics.yaml#/CostTrend'
+    UsageStats:
+      $ref: 'schemas/analytics.yaml#/UsageStats'
+    AuditAction:
+      $ref: 'schemas/analytics.yaml#/AuditAction'
+    AuditLog:
+      $ref: 'schemas/analytics.yaml#/AuditLog'
+    PaginatedAuditLogs:
+      $ref: 'schemas/analytics.yaml#/PaginatedAuditLogs'
+
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Forbidden - Admin role required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+    RateLimitExceeded:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InvalidOnboardingToken:
+      description: Invalid onboarding token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: Resource already exists
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  parameters:
+    ChatId:
+      name: chat_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique identifier for the conversation
+    FileId:
+      name: file_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique identifier for the file
+    UserId:
+      name: user_id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Unique identifier for the user
+    ProviderId:
+      name: provider_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique identifier for the SSO provider
+    KeyId:
+      name: key_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique identifier for the API key
+    LimitId:
+      name: limit_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique identifier for the rate limit configuration
+    BudgetId:
+      name: budget_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique identifier for the budget
+    OnboardingToken:
+      name: X-Onboarding-Token
+      in: header
+      required: true
+      schema:
+        type: string
+      description: Token to authenticate onboarding requests
+    AuthProvider:
+      name: provider
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/AuthProvider'
+      description: SSO/OIDC provider identifier
+
+paths:
+  # Common paths (health, models, settings, files)
+  /health:
+    $ref: 'paths/common.yaml#/~1health'
+  /models:
+    $ref: 'paths/common.yaml#/~1models'
+  /settings:
+    $ref: 'paths/common.yaml#/~1settings'
+  /files:
+    $ref: 'paths/common.yaml#/~1files'
+  /files/{file_id}:
+    $ref: 'paths/common.yaml#/~1files~1%7Bfile_id%7D'
+  /files/{file_id}/download:
+    $ref: 'paths/common.yaml#/~1files~1%7Bfile_id%7D~1download'
+
+  # User paths
+  /me:
+    $ref: 'paths/user.yaml#/~1me'
+  /me/rate-limit:
+    $ref: 'paths/user.yaml#/~1me~1rate-limit'
+  /me/budget:
+    $ref: 'paths/user.yaml#/~1me~1budget'
+  /me/usage:
+    $ref: 'paths/user.yaml#/~1me~1usage'
+
+  # Chat paths
+  /chat:
+    $ref: 'paths/chat.yaml#/~1chat'
+  /chat/stream:
+    $ref: 'paths/chat.yaml#/~1chat~1stream'
+  /chat/{chat_id}:
+    $ref: 'paths/chat.yaml#/~1chat~1%7Bchat_id%7D'
+
+  # Auth paths
+  /onboarding/start:
+    $ref: 'paths/auth.yaml#/~1onboarding~1start'
+  /onboarding/status:
+    $ref: 'paths/auth.yaml#/~1onboarding~1status'
+  /onboarding/organization:
+    $ref: 'paths/auth.yaml#/~1onboarding~1organization'
+  /onboarding/admin:
+    $ref: 'paths/auth.yaml#/~1onboarding~1admin'
+  /onboarding/providers:
+    $ref: 'paths/auth.yaml#/~1onboarding~1providers'
+  /onboarding/providers/validate:
+    $ref: 'paths/auth.yaml#/~1onboarding~1providers~1validate'
+  /onboarding/sso:
+    $ref: 'paths/auth.yaml#/~1onboarding~1sso'
+  /onboarding/sso/test:
+    $ref: 'paths/auth.yaml#/~1onboarding~1sso~1test'
+  /onboarding/complete:
+    $ref: 'paths/auth.yaml#/~1onboarding~1complete'
+  /auth/login:
+    $ref: 'paths/auth.yaml#/~1auth~1login'
+  /auth/{provider}:
+    $ref: 'paths/auth.yaml#/~1auth~1%7Bprovider%7D'
+  /auth/{provider}/callback:
+    $ref: 'paths/auth.yaml#/~1auth~1%7Bprovider%7D~1callback'
+  /auth/mfa/setup:
+    $ref: 'paths/auth.yaml#/~1auth~1mfa~1setup'
+  /auth/mfa/verify:
+    $ref: 'paths/auth.yaml#/~1auth~1mfa~1verify'
+  /auth/mfa/recovery:
+    $ref: 'paths/auth.yaml#/~1auth~1mfa~1recovery'
+  /auth/mfa/regenerate-codes:
+    $ref: 'paths/auth.yaml#/~1auth~1mfa~1regenerate-codes'
+  /auth/password/forgot:
+    $ref: 'paths/auth.yaml#/~1auth~1password~1forgot'
+  /auth/password/reset:
+    $ref: 'paths/auth.yaml#/~1auth~1password~1reset'
+  /auth/password/change:
+    $ref: 'paths/auth.yaml#/~1auth~1password~1change'
+  /auth/refresh:
+    $ref: 'paths/auth.yaml#/~1auth~1refresh'
+  /auth/logout:
+    $ref: 'paths/auth.yaml#/~1auth~1logout'
+
+  # Admin paths
+  /admin/dashboard:
+    $ref: 'paths/admin.yaml#/~1admin~1dashboard'
+  /admin/users:
+    $ref: 'paths/admin.yaml#/~1admin~1users'
+  /admin/users/bulk:
+    $ref: 'paths/admin.yaml#/~1admin~1users~1bulk'
+  /admin/users/{user_id}:
+    $ref: 'paths/admin.yaml#/~1admin~1users~1%7Buser_id%7D'
+  /admin/users/{user_id}/usage:
+    $ref: 'paths/admin.yaml#/~1admin~1users~1%7Buser_id%7D~1usage'
+  /admin/organization:
+    $ref: 'paths/admin.yaml#/~1admin~1organization'
+  /admin/api-keys:
+    $ref: 'paths/admin.yaml#/~1admin~1api-keys'
+  /admin/api-keys/{key_id}:
+    $ref: 'paths/admin.yaml#/~1admin~1api-keys~1%7Bkey_id%7D'
+  /admin/api-keys/{key_id}/validate:
+    $ref: 'paths/admin.yaml#/~1admin~1api-keys~1%7Bkey_id%7D~1validate'
+  /admin/sso-providers:
+    $ref: 'paths/admin.yaml#/~1admin~1sso-providers'
+  /admin/sso-providers/{provider_id}:
+    $ref: 'paths/admin.yaml#/~1admin~1sso-providers~1%7Bprovider_id%7D'
+  /admin/sso-providers/{provider_id}/test:
+    $ref: 'paths/admin.yaml#/~1admin~1sso-providers~1%7Bprovider_id%7D~1test'
+  /admin/rate-limits:
+    $ref: 'paths/admin.yaml#/~1admin~1rate-limits'
+  /admin/rate-limits/{limit_id}:
+    $ref: 'paths/admin.yaml#/~1admin~1rate-limits~1%7Blimit_id%7D'
+  /admin/budgets:
+    $ref: 'paths/admin.yaml#/~1admin~1budgets'
+  /admin/budgets/{budget_id}:
+    $ref: 'paths/admin.yaml#/~1admin~1budgets~1%7Bbudget_id%7D'
+
+  # Analytics paths
+  /analytics/costs:
+    $ref: 'paths/analytics.yaml#/~1analytics~1costs'
+  /analytics/costs/export:
+    $ref: 'paths/analytics.yaml#/~1analytics~1costs~1export'
+  /analytics/usage:
+    $ref: 'paths/analytics.yaml#/~1analytics~1usage'
+  /analytics/trends:
+    $ref: 'paths/analytics.yaml#/~1analytics~1trends'
+  /audit/logs:
+    $ref: 'paths/analytics.yaml#/~1audit~1logs'
+  /audit/logs/export:
+    $ref: 'paths/analytics.yaml#/~1audit~1logs~1export'

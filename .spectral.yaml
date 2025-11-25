@@ -1,0 +1,33 @@
+extends: ["spectral:oas"]
+
+rules:
+  # Disable schema version check (OpenAPI 3.2 not yet in spectral:oas)
+  oas3-schema: off
+
+  # Require operation IDs
+  operation-operationId: error
+
+  # Require descriptions (warn, not error)
+  operation-description: warn
+  info-description: warn
+
+  # Require tags on operations
+  operation-tags: error
+
+  # Validate examples against schema
+  oas3-valid-media-example: error
+
+  # Ensure unique operation IDs
+  operation-operationId-unique: error
+
+  # Path parameters must be defined
+  path-params: error
+
+  # No eval in examples
+  no-eval-in-markdown: error
+
+  # Typed responses
+  typed-enum: warn
+
+  # Unused components (set to warn to allow reusable schemas)
+  oas3-unused-component: warn

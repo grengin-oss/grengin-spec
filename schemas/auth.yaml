@@ -1,0 +1,546 @@
+# Authentication, SSO, MFA, and Onboarding schemas
+AuthProvider:
+  type: string
+  description: |
+    Identifier for the SSO/OIDC provider. This is a free-form string that
+    serves as a display name and URL slug (e.g., /auth/google, /auth/keycloak).
+
+    Common values: google, azure, keycloak, authentik, authelia, okta, auth0,
+    onelogin, jumpcloud, or any custom identifier.
+
+    The actual OIDC configuration (issuer_url, client_id, etc.) determines
+    provider behavior - not this identifier.
+  example: keycloak
+
+AuthInitResponse:
+  type: object
+  required:
+    - auth_url
+    - state
+  properties:
+    auth_url:
+      type: string
+      format: uri
+      description: URL to redirect user for authentication
+    state:
+      type: string
+      description: CSRF protection state token
+
+AuthCallbackRequest:
+  type: object
+  required:
+    - code
+    - state
+  properties:
+    code:
+      type: string
+      description: Authorization code from OAuth provider
+    state:
+      type: string
+      description: State token for CSRF validation
+
+AuthTokenResponse:
+  type: object
+  required:
+    - access_token
+    - token_type
+    - expires_in
+  properties:
+    access_token:
+      type: string
+      description: JWT access token
+    token_type:
+      type: string
+      enum:
+        - Bearer
+    expires_in:
+      type: integer
+      description: Token expiration time in seconds
+    refresh_token:
+      type: string
+      description: Refresh token for obtaining new access tokens
+    user:
+      $ref: 'user.yaml#/User'
+
+RefreshTokenRequest:
+  type: object
+  required:
+    - refresh_token
+  properties:
+    refresh_token:
+      type: string
+
+# SSO Provider Configuration
+OidcProviderConfig:
+  type: object
+  required:
+    - provider
+    - client_id
+    - issuer_url
+  properties:
+    id:
+      type: string
+      format: uuid
+    provider:
+      $ref: '#/AuthProvider'
+    name:
+      type: string
+      description: Display name for this provider
+    client_id:
+      type: string
+      description: OAuth 2.0 Client ID
+    client_secret:
+      type: string
+      description: OAuth 2.0 Client Secret (write-only, never returned)
+      writeOnly: true
+    issuer_url:
+      type: string
+      format: uri
+      description: |
+        OIDC Issuer URL for discovery (must have /.well-known/openid-configuration).
+        Examples:
+        - Keycloak: https://keycloak.example.com/realms/{realm}
+        - Authentik: https://auth.example.com/application/o/{app-slug}/
+        - Authelia: https://auth.example.com
+        - Google: https://accounts.google.com
+        - Azure AD: https://login.microsoftonline.com/{tenant}/v2.0
+        - Dex: https://dex.example.com
+        - Any OIDC-compliant provider
+    scopes:
+      type: array
+      items:
+        type: string
+      default:
+        - openid
+        - email
+        - profile
+      description: OAuth scopes to request
+    allowed_domains:
+      type: array
+      items:
+        type: string
+      description: Restrict login to users from these email domains
+    is_enabled:
+      type: boolean
+      default: true
+    is_default:
+      type: boolean
+      default: false
+      description: Use as the default SSO provider
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+
+OidcProviderConfigCreate:
+  type: object
+  required:
+    - provider
+    - client_id
+    - client_secret
+    - issuer_url
+  properties:
+    provider:
+      $ref: '#/AuthProvider'
+    name:
+      type: string
+    client_id:
+      type: string
+    client_secret:
+      type: string
+    issuer_url:
+      type: string
+      format: uri
+    scopes:
+      type: array
+      items:
+        type: string
+    allowed_domains:
+      type: array
+      items:
+        type: string
+    is_enabled:
+      type: boolean
+      default: true
+    is_default:
+      type: boolean
+      default: false
+
+# Onboarding schemas
+OnboardingStep:
+  type: string
+  enum:
+    - welcome
+    - organization
+    - admin
+    - providers
+    - sso
+    - complete
+  description: Current step in the onboarding flow
+
+OnboardingStatus:
+  type: object
+  required:
+    - session_id
+    - current_step
+    - expires_at
+  properties:
+    session_id:
+      type: string
+      format: uuid
+    current_step:
+      $ref: '#/OnboardingStep'
+    completed_steps:
+      type: array
+      items:
+        $ref: '#/OnboardingStep'
+    organization_configured:
+      type: boolean
+    admin_created:
+      type: boolean
+    providers_configured:
+      type: boolean
+    sso_configured:
+      type: boolean
+    expires_at:
+      type: string
+      format: date-time
+
+OnboardingStartRequest:
+  type: object
+  required:
+    - accept_terms
+    - accept_privacy
+  properties:
+    accept_terms:
+      type: boolean
+      description: User accepts Terms of Service
+    accept_privacy:
+      type: boolean
+      description: User accepts Privacy Policy
+
+OnboardingStartResponse:
+  type: object
+  required:
+    - session_id
+    - session_token
+  properties:
+    session_id:
+      type: string
+      format: uuid
+    session_token:
+      type: string
+      description: Token to authenticate subsequent onboarding requests
+    expires_at:
+      type: string
+      format: date-time
+
+CompanySize:
+  type: string
+  enum:
+    - "1-50"
+    - "51-200"
+    - "201-500"
+    - "501-1000"
+    - "1000+"
+
+Industry:
+  type: string
+  enum:
+    - financial_services
+    - healthcare
+    - technology
+    - legal
+    - government
+    - education
+    - manufacturing
+    - retail
+    - other
+
+OrganizationSetupRequest:
+  type: object
+  required:
+    - name
+    - domain
+    - company_size
+    - country
+  properties:
+    name:
+      type: string
+      minLength: 2
+      maxLength: 100
+    domain:
+      type: string
+      description: Primary domain (e.g., company.com)
+    industry:
+      $ref: '#/Industry'
+    company_size:
+      $ref: '#/CompanySize'
+    country:
+      type: string
+      minLength: 2
+      maxLength: 2
+      description: ISO 3166-1 alpha-2 country code
+
+SuperAdminCreateRequest:
+  type: object
+  required:
+    - email
+    - name
+    - password
+    - password_confirmation
+  properties:
+    email:
+      type: string
+      format: email
+    name:
+      type: string
+      minLength: 2
+      maxLength: 100
+    password:
+      type: string
+      minLength: 12
+      description: |
+        Password requirements:
+        - Minimum 12 characters
+        - At least 1 uppercase letter
+        - At least 1 lowercase letter
+        - At least 1 number
+        - At least 1 special character
+    password_confirmation:
+      type: string
+    recovery_email:
+      type: string
+      format: email
+      description: Optional recovery email (must differ from primary)
+
+ApiKeyProvider:
+  type: string
+  enum:
+    - openai
+    - anthropic
+    - groq
+
+LlmProviderSetupRequest:
+  type: object
+  required:
+    - providers
+    - default_provider
+    - default_model
+  properties:
+    providers:
+      type: array
+      items:
+        type: object
+        required:
+          - provider
+          - api_key
+        properties:
+          provider:
+            $ref: '#/ApiKeyProvider'
+          api_key:
+            type: string
+          name:
+            type: string
+      minItems: 1
+    default_provider:
+      $ref: '#/ApiKeyProvider'
+    default_model:
+      type: string
+
+ValidateApiKeyRequest:
+  type: object
+  required:
+    - provider
+    - api_key
+  properties:
+    provider:
+      $ref: '#/ApiKeyProvider'
+    api_key:
+      type: string
+
+ValidateApiKeyResponse:
+  type: object
+  properties:
+    valid:
+      type: boolean
+    provider:
+      type: string
+    available_models:
+      type: array
+      items:
+        type: string
+    error:
+      type: string
+      nullable: true
+
+OnboardingSsoRequest:
+  type: object
+  properties:
+    skip:
+      type: boolean
+      default: false
+      description: Set to true to skip SSO configuration
+    provider:
+      $ref: '#/AuthProvider'
+    name:
+      type: string
+    issuer_url:
+      type: string
+      format: uri
+    client_id:
+      type: string
+    client_secret:
+      type: string
+    allowed_domains:
+      type: array
+      items:
+        type: string
+
+OnboardingCompleteResponse:
+  type: object
+  required:
+    - success
+    - recovery_codes
+    - organization
+    - super_admin
+  properties:
+    success:
+      type: boolean
+    recovery_codes:
+      type: array
+      items:
+        type: string
+      description: 10 single-use recovery codes (store securely!)
+    organization:
+      $ref: 'admin.yaml#/Organization'
+    super_admin:
+      $ref: 'user.yaml#/User'
+    login_url:
+      type: string
+      format: uri
+
+# Password authentication
+PasswordLoginRequest:
+  type: object
+  required:
+    - email
+    - password
+  properties:
+    email:
+      type: string
+      format: email
+    password:
+      type: string
+    remember_me:
+      type: boolean
+      default: false
+
+PasswordLoginResponse:
+  type: object
+  properties:
+    requires_mfa:
+      type: boolean
+    mfa_token:
+      type: string
+      description: Temporary token to complete MFA verification
+    access_token:
+      type: string
+      description: Only returned if MFA not required or already verified
+    refresh_token:
+      type: string
+    user:
+      $ref: 'user.yaml#/User'
+
+# MFA schemas
+MfaSetupResponse:
+  type: object
+  required:
+    - secret
+    - qr_code_url
+    - otpauth_url
+  properties:
+    secret:
+      type: string
+      description: Base32 encoded TOTP secret
+    qr_code_url:
+      type: string
+      format: uri
+      description: URL to QR code image
+    otpauth_url:
+      type: string
+      description: otpauth:// URL for authenticator apps
+    recovery_codes:
+      type: array
+      items:
+        type: string
+      description: New recovery codes (only on initial setup)
+
+MfaVerifyRequest:
+  type: object
+  required:
+    - code
+  properties:
+    code:
+      type: string
+      minLength: 6
+      maxLength: 6
+      description: 6-digit TOTP code
+    mfa_token:
+      type: string
+      description: Token from login response (if verifying after login)
+
+MfaRecoveryRequest:
+  type: object
+  required:
+    - recovery_code
+  properties:
+    recovery_code:
+      type: string
+      description: One of the 10 recovery codes
+    mfa_token:
+      type: string
+      description: Token from login response
+
+# Password management
+PasswordForgotRequest:
+  type: object
+  required:
+    - email
+  properties:
+    email:
+      type: string
+      format: email
+
+PasswordResetRequest:
+  type: object
+  required:
+    - token
+    - password
+    - password_confirmation
+  properties:
+    token:
+      type: string
+      description: Reset token from email
+    password:
+      type: string
+      minLength: 12
+    password_confirmation:
+      type: string
+
+PasswordChangeRequest:
+  type: object
+  required:
+    - current_password
+    - new_password
+    - new_password_confirmation
+  properties:
+    current_password:
+      type: string
+    new_password:
+      type: string
+      minLength: 12
+    new_password_confirmation:
+      type: string

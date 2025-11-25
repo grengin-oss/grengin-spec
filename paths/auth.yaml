@@ -1,0 +1,660 @@
+# Authentication and authorization (SSO via OpenID Connect)
+
+# Onboarding
+/onboarding/start:
+  post:
+    tags:
+    - auth
+    summary: Start onboarding
+    description: |
+      Initialize platform onboarding flow. Creates a new organization and begins the setup wizard.
+      Only available when no organization exists (fresh deployment).
+    operationId: startOnboarding
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/OnboardingStartRequest'
+    responses:
+      '201':
+        description: Onboarding session created
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/OnboardingStartResponse'
+      '400':
+        description: Terms not accepted
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Error'
+      '409':
+        $ref: '../openapi.yaml#/components/responses/Conflict'
+
+/onboarding/status:
+  get:
+    tags:
+    - auth
+    summary: Get onboarding status
+    description: Check current onboarding progress and state
+    operationId: getOnboardingStatus
+    security: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/OnboardingToken'
+    responses:
+      '200':
+        description: Current onboarding status
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/OnboardingStatus'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/InvalidOnboardingToken'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+
+/onboarding/organization:
+  post:
+    tags:
+    - auth
+    summary: Set organization details
+    description: Configure organization name, domain, and company information
+    operationId: setOnboardingOrganization
+    security: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/OnboardingToken'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/OrganizationSetupRequest'
+    responses:
+      '200':
+        description: Organization configured
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/OnboardingStatus'
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/ValidationError'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/InvalidOnboardingToken'
+
+/onboarding/admin:
+  post:
+    tags:
+    - auth
+    summary: Create super admin
+    description: |
+      Create the super admin account with email/password authentication.
+      This account cannot use SSO and serves as the platform's root administrator.
+    operationId: createSuperAdmin
+    security: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/OnboardingToken'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/SuperAdminCreateRequest'
+    responses:
+      '201':
+        description: Super admin created
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/OnboardingStatus'
+      '400':
+        description: Validation error (weak password, etc.)
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/ValidationError'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/InvalidOnboardingToken'
+      '409':
+        $ref: '../openapi.yaml#/components/responses/Conflict'
+
+/onboarding/providers:
+  post:
+    tags:
+    - auth
+    summary: Configure LLM providers
+    description: Set up API keys for LLM providers (OpenAI, Anthropic, Groq)
+    operationId: configureOnboardingProviders
+    security: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/OnboardingToken'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/LlmProviderSetupRequest'
+    responses:
+      '200':
+        description: Providers configured
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/OnboardingStatus'
+      '400':
+        description: Validation error or invalid API key
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Error'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/InvalidOnboardingToken'
+
+/onboarding/providers/validate:
+  post:
+    tags:
+    - auth
+    summary: Validate API key
+    description: Test if an LLM provider API key is valid before saving
+    operationId: validateOnboardingApiKey
+    security: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/OnboardingToken'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/ValidateApiKeyRequest'
+    responses:
+      '200':
+        description: Validation result
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/ValidateApiKeyResponse'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/InvalidOnboardingToken'
+
+/onboarding/sso:
+  post:
+    tags:
+    - auth
+    summary: Configure SSO (optional)
+    description: |
+      Configure SSO/OIDC provider for organization users.
+      Can be skipped and configured later from admin panel.
+    operationId: configureOnboardingSso
+    security: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/OnboardingToken'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/OnboardingSsoRequest'
+    responses:
+      '200':
+        description: SSO configured or skipped
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/OnboardingStatus'
+      '400':
+        description: Invalid SSO configuration
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Error'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/InvalidOnboardingToken'
+
+/onboarding/sso/test:
+  post:
+    tags:
+    - auth
+    summary: Test SSO configuration
+    description: Verify OIDC discovery endpoint and credentials before saving
+    operationId: testOnboardingSso
+    security: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/OnboardingToken'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/OnboardingSsoRequest'
+    responses:
+      '200':
+        description: Test result
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+                discovered_endpoints:
+                  type: object
+                  properties:
+                    authorization_endpoint:
+                      type: string
+                    token_endpoint:
+                      type: string
+                    userinfo_endpoint:
+                      type: string
+                    jwks_uri:
+                      type: string
+      '401':
+        $ref: '../openapi.yaml#/components/responses/InvalidOnboardingToken'
+
+/onboarding/complete:
+  post:
+    tags:
+    - auth
+    summary: Complete onboarding
+    description: |
+      Finalize the onboarding process. Returns recovery codes for the super admin account.
+      **Important:** Recovery codes are only shown once - user must save them securely.
+    operationId: completeOnboarding
+    security: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/OnboardingToken'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - confirm_recovery_codes
+            properties:
+              confirm_recovery_codes:
+                type: boolean
+                description: User confirms they have saved recovery codes
+    responses:
+      '200':
+        description: Onboarding complete
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/OnboardingCompleteResponse'
+      '400':
+        description: Onboarding steps not completed or confirmation not provided
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Error'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/InvalidOnboardingToken'
+
+# Login
+/auth/login:
+  post:
+    tags:
+    - auth
+    summary: Password login
+    description: |
+      Authenticate with email and password (for super admin or password-enabled accounts).
+      If MFA is enabled, returns a temporary token to complete MFA verification.
+    operationId: passwordLogin
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/PasswordLoginRequest'
+    responses:
+      '200':
+        description: Login successful or MFA required
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/PasswordLoginResponse'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '423':
+        description: Account locked (too many failed attempts)
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                detail:
+                  type: string
+                locked_until:
+                  type: string
+                  format: date-time
+
+/auth/{provider}:
+  get:
+    tags:
+    - auth
+    summary: Initiate SSO login
+    description: Start the OAuth/OIDC flow for the specified provider
+    operationId: initiateAuth
+    security: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/AuthProvider'
+    - name: redirect_uri
+      in: query
+      description: Optional redirect URI after successful authentication
+      schema:
+        type: string
+        format: uri
+    responses:
+      '200':
+        description: Authentication URL and state
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/AuthInitResponse'
+      '302':
+        description: Redirect to provider's login page
+      '400':
+        description: Invalid provider or configuration
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Error'
+
+/auth/{provider}/callback:
+  get:
+    tags:
+    - auth
+    summary: OAuth callback
+    description: Handle the OAuth callback from the identity provider
+    operationId: authCallback
+    security: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/AuthProvider'
+    - name: code
+      in: query
+      required: true
+      schema:
+        type: string
+    - name: state
+      in: query
+      required: true
+      schema:
+        type: string
+    - name: error
+      in: query
+      schema:
+        type: string
+    - name: error_description
+      in: query
+      schema:
+        type: string
+    responses:
+      '200':
+        description: Authentication successful
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/AuthTokenResponse'
+      '302':
+        description: Redirect to application with tokens
+      '400':
+        description: Invalid callback parameters
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Error'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+
+# MFA
+/auth/mfa/setup:
+  post:
+    tags:
+    - auth
+    summary: Set up MFA
+    description: Initialize TOTP-based MFA for the current user. Returns QR code and secret.
+    operationId: setupMfa
+    security:
+    - bearerAuth: []
+    responses:
+      '200':
+        description: MFA setup information
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/MfaSetupResponse'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '409':
+        $ref: '../openapi.yaml#/components/responses/Conflict'
+
+/auth/mfa/verify:
+  post:
+    tags:
+    - auth
+    summary: Verify MFA code
+    description: Verify a TOTP code for MFA setup or login completion
+    operationId: verifyMfa
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/MfaVerifyRequest'
+    responses:
+      '200':
+        description: MFA verified successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/AuthTokenResponse'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+
+/auth/mfa/recovery:
+  post:
+    tags:
+    - auth
+    summary: Use recovery code
+    description: Use a recovery code to bypass MFA (single-use, code is consumed)
+    operationId: useMfaRecovery
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/MfaRecoveryRequest'
+    responses:
+      '200':
+        description: Recovery successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                access_token:
+                  type: string
+                refresh_token:
+                  type: string
+                remaining_codes:
+                  type: integer
+                user:
+                  $ref: '../openapi.yaml#/components/schemas/User'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+
+/auth/mfa/regenerate-codes:
+  post:
+    tags:
+    - auth
+    summary: Regenerate recovery codes
+    description: Generate new recovery codes (invalidates existing ones)
+    operationId: regenerateMfaCodes
+    security:
+    - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - current_password
+            properties:
+              current_password:
+                type: string
+    responses:
+      '200':
+        description: New recovery codes
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                recovery_codes:
+                  type: array
+                  items:
+                    type: string
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+
+# Password management
+/auth/password/forgot:
+  post:
+    tags:
+    - auth
+    summary: Request password reset
+    description: Send a password reset email to the user
+    operationId: forgotPassword
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/PasswordForgotRequest'
+    responses:
+      '200':
+        description: Reset email sent (always returns success for security)
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+
+/auth/password/reset:
+  post:
+    tags:
+    - auth
+    summary: Reset password
+    description: Reset password using token from email
+    operationId: resetPassword
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/PasswordResetRequest'
+    responses:
+      '200':
+        description: Password reset successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+      '400':
+        description: Invalid or expired token, or weak password
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Error'
+
+/auth/password/change:
+  post:
+    tags:
+    - auth
+    summary: Change password
+    description: Change password for logged-in user
+    operationId: changePassword
+    security:
+    - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/PasswordChangeRequest'
+    responses:
+      '200':
+        description: Password changed successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+      '400':
+        description: Invalid current password or weak new password
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Error'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+
+# Token management
+/auth/refresh:
+  post:
+    tags:
+    - auth
+    summary: Refresh access token
+    description: Exchange a refresh token for a new access token
+    operationId: refreshToken
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/RefreshTokenRequest'
+    responses:
+      '200':
+        description: New tokens
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/AuthTokenResponse'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+
+/auth/logout:
+  post:
+    tags:
+    - auth
+    summary: Logout
+    description: Invalidate the current session and tokens
+    operationId: logout
+    security:
+    - bearerAuth: []
+    responses:
+      '204':
+        description: Successfully logged out
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'

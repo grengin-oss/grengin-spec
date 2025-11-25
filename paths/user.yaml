@@ -1,0 +1,87 @@
+# User profile and information
+
+/me:
+  get:
+    tags:
+    - user
+    summary: Get current user
+    description: Get authenticated user information
+    operationId: getCurrentUser
+    security:
+    - bearerAuth: []
+    responses:
+      '200':
+        description: Current user information
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/User'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+
+/me/rate-limit:
+  get:
+    tags:
+    - user
+    summary: Get current rate limit status
+    description: Get the current user's rate limit status
+    operationId: getCurrentUserRateLimit
+    security:
+    - bearerAuth: []
+    responses:
+      '200':
+        description: Rate limit status
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/RateLimitStatus'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+
+/me/budget:
+  get:
+    tags:
+    - user
+    summary: Get current budget status
+    description: Get the current user's budget status
+    operationId: getCurrentUserBudget
+    security:
+    - bearerAuth: []
+    responses:
+      '200':
+        description: Budget status
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/BudgetStatus'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+
+/me/usage:
+  get:
+    tags:
+    - user
+    summary: Get current user usage
+    description: Get usage statistics for the current user
+    operationId: getCurrentUserUsage
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: period
+      in: query
+      schema:
+        type: string
+        enum:
+        - day
+        - week
+        - month
+        default: month
+    responses:
+      '200':
+        description: User usage statistics
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/CostSummary'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'

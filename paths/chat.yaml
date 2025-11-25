@@ -1,0 +1,143 @@
+# Chat conversations and messages
+
+/chat:
+  get:
+    tags:
+    - chat
+    summary: List conversations
+    description: Get all conversations for the authenticated user
+    operationId: listConversations
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+    - name: offset
+      in: query
+      schema:
+        type: integer
+        default: 0
+    - name: archived
+      in: query
+      schema:
+        type: boolean
+    - name: search
+      in: query
+      description: Search in conversation titles
+      schema:
+        type: string
+    responses:
+      '200':
+        description: List of conversations
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/ConversationList'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+
+/chat/stream:
+  post:
+    tags:
+    - chat
+    summary: Stream chat response
+    description: Send a message and receive streaming response via SSE
+    operationId: streamChat
+    security:
+    - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/ChatRequest'
+    responses:
+      '200':
+        description: Streaming response
+        content:
+          text/event-stream:
+            schema:
+              type: string
+      '400':
+        $ref: '../openapi.yaml#/components/responses/BadRequest'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '429':
+        $ref: '../openapi.yaml#/components/responses/RateLimitExceeded'
+
+/chat/{chat_id}:
+  get:
+    tags:
+    - chat
+    summary: Get conversation
+    description: Get a conversation with all messages
+    operationId: getConversation
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/ChatId'
+    responses:
+      '200':
+        description: Conversation details
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/ConversationDetail'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+  put:
+    tags:
+    - chat
+    summary: Update conversation
+    description: Update conversation title or other properties
+    operationId: updateConversation
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/ChatId'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              title:
+                type: string
+              archived:
+                type: boolean
+    responses:
+      '200':
+        description: Updated conversation
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Conversation'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+  delete:
+    tags:
+    - chat
+    summary: Delete conversation
+    description: Delete a conversation and all its messages
+    operationId: deleteConversation
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/ChatId'
+    responses:
+      '204':
+        description: Conversation deleted successfully
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'

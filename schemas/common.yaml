@@ -1,0 +1,271 @@
+# Common schemas - errors, health, pagination
+Error:
+  type: object
+  required:
+    - detail
+  properties:
+    detail:
+      oneOf:
+        - type: string
+        - type: object
+          properties:
+            error:
+              type: string
+            code:
+              type: string
+            message:
+              type: string
+  example:
+    detail: Resource not found
+
+ValidationError:
+  type: object
+  required:
+    - detail
+  properties:
+    detail:
+      type: array
+      items:
+        type: object
+        properties:
+          loc:
+            type: array
+            items:
+              type: string
+          msg:
+            type: string
+          type:
+            type: string
+
+HealthResponse:
+  type: object
+  required:
+    - status
+    - timestamp
+  properties:
+    status:
+      type: string
+      enum:
+        - healthy
+        - degraded
+        - unhealthy
+    timestamp:
+      type: string
+      format: date-time
+    services:
+      type: object
+      properties:
+        database:
+          type: string
+          enum:
+            - up
+            - down
+        redis:
+          type: string
+          enum:
+            - up
+            - down
+        llm_providers:
+          type: object
+          additionalProperties:
+            type: string
+            enum:
+              - up
+              - down
+    version:
+      type: string
+
+# File-related schemas
+FileStatus:
+  type: string
+  enum:
+    - uploaded
+    - processing
+    - ready
+    - error
+
+VirusScanStatus:
+  type: string
+  enum:
+    - pending
+    - clean
+    - infected
+    - error
+
+UserFile:
+  type: object
+  required:
+    - id
+    - name
+    - size
+    - type
+    - created_at
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+      description: User-facing filename
+    size:
+      type: integer
+      format: int64
+    type:
+      type: string
+      description: MIME type
+    description:
+      type: string
+      nullable: true
+    url:
+      type: string
+      format: uri
+    download_url:
+      type: string
+      format: uri
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+    user_id:
+      type: string
+      format: uuid
+      description: ID of the user who uploaded the file
+    status:
+      $ref: '#/FileStatus'
+    metadata:
+      type: object
+      properties:
+        checksum:
+          type: string
+        virus_scan_status:
+          $ref: '#/VirusScanStatus'
+        processing_status:
+          type: string
+
+PaginatedFiles:
+  type: object
+  required:
+    - files
+    - total
+    - limit
+    - offset
+  properties:
+    files:
+      type: array
+      items:
+        $ref: '#/UserFile'
+    total:
+      type: integer
+    limit:
+      type: integer
+    offset:
+      type: integer
+    sort:
+      type: string
+    order:
+      type: string
+      enum:
+        - asc
+        - desc
+
+# Model/Provider schemas
+ModelInfo:
+  type: object
+  required:
+    - key
+    - name
+  properties:
+    key:
+      type: string
+    name:
+      type: string
+    context_window:
+      type: integer
+      nullable: true
+    max_output_tokens:
+      type: integer
+      nullable: true
+    supports_streaming:
+      type: boolean
+    supports_tools:
+      type: boolean
+    supports_vision:
+      type: boolean
+    pricing:
+      type: object
+      properties:
+        input:
+          type: number
+          format: float
+          description: Price per 1M input tokens in USD
+        output:
+          type: number
+          format: float
+          description: Price per 1M output tokens in USD
+      nullable: true
+
+ProviderInfo:
+  type: object
+  required:
+    - key
+    - name
+    - models
+  properties:
+    key:
+      type: string
+    name:
+      type: string
+    icon:
+      type: string
+      nullable: true
+    status:
+      type: string
+      enum:
+        - active
+        - degraded
+        - unavailable
+    models:
+      type: array
+      items:
+        $ref: '#/ModelInfo'
+
+# Settings schemas
+ModelSelection:
+  type: object
+  required:
+    - model_name
+    - provider
+  properties:
+    model_name:
+      type: string
+    provider:
+      type: string
+
+ModelSettings:
+  type: object
+  properties:
+    tool_models:
+      type: object
+      additionalProperties:
+        $ref: '#/ModelSelection'
+
+UserSettings:
+  type: object
+  properties:
+    models:
+      $ref: '#/ModelSettings'
+    default_model:
+      type: string
+    default_provider:
+      type: string
+    theme:
+      type: string
+      enum:
+        - light
+        - dark
+        - system
+    language:
+      type: string
+      default: en
