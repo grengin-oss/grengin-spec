@@ -15,12 +15,14 @@ Conversation:
       type: boolean
       default: false
     archived_at:
-      type: string
+      type:
+        - string
+        - "null"
       format: date-time
-      nullable: true
     model:
-      type: string
-      nullable: true
+      type:
+        - string
+        - "null"
       description: Last used model in conversation
     total_tokens:
       type: integer
@@ -102,31 +104,37 @@ Message:
     parts:
       $ref: '#/MessagePart'
     model:
-      type: string
-      nullable: true
+      type:
+        - string
+        - "null"
     model_params:
-      type: object
-      nullable: true
+      type:
+        - object
+        - "null"
     tool_calls:
-      type: array
+      type:
+        - array
+        - "null"
       items:
         type: object
-      nullable: true
     tool_results:
-      type: array
+      type:
+        - array
+        - "null"
       items:
         type: object
-      nullable: true
     usage:
       $ref: '#/TokenUsage'
     cost:
-      type: number
+      type:
+        - number
+        - "null"
       format: float
       description: Cost of this message in USD
-      nullable: true
     request_id:
-      type: string
-      nullable: true
+      type:
+        - string
+        - "null"
     created_at:
       type: string
       format: date-time
@@ -150,11 +158,13 @@ ChatRequest:
     - messages
   properties:
     provider:
-      type: string
-      nullable: true
+      type:
+        - string
+        - "null"
     model_name:
-      type: string
-      nullable: true
+      type:
+        - string
+        - "null"
     messages:
       type: array
       items:
@@ -175,17 +185,20 @@ ChatRequest:
       type: boolean
       default: false
     config:
-      type: object
-      nullable: true
+      type:
+        - object
+        - "null"
     conversation_id:
-      type: string
+      type:
+        - string
+        - "null"
       format: uuid
-      nullable: true
     selected_tools:
-      type: array
+      type:
+        - array
+        - "null"
       items:
         type: string
-      nullable: true
 
 ConversationList:
   type: object

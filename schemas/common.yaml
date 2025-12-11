@@ -114,8 +114,9 @@ UserFile:
       type: string
       description: MIME type
     description:
-      type: string
-      nullable: true
+      type:
+        - string
+        - "null"
     url:
       type: string
       format: uri
@@ -170,7 +171,38 @@ PaginatedFiles:
         - asc
         - desc
 
-# Model/Provider schemas
+# AI Engine/Model schemas - shared across chat, public, and admin APIs
+
+# AI Engine identifier
+AIEngine:
+  type: string
+  description: AI engine identifier (e.g., openai, anthropic, groq, or any custom provider)
+
+# Parameter definition for AI models
+AIModelParameter:
+  type: object
+  required:
+    - name
+    - type
+  properties:
+    name:
+      type: string
+      description: Parameter name (e.g., temperature, max_tokens)
+    type:
+      type: string
+      enum: [number, integer, boolean, string]
+    default:
+      description: Default value for the parameter
+    min:
+      type: number
+      description: Minimum value (for numeric types)
+    max:
+      type: number
+      description: Maximum value (for numeric types)
+    description:
+      type: string
+
+# Model info for /models endpoint and chat APIs
 ModelInfo:
   type: object
   required:
@@ -179,22 +211,52 @@ ModelInfo:
   properties:
     key:
       type: string
+      description: Model identifier used with APIs (e.g., gpt-4.1, claude-sonnet-4-20250514)
     name:
       type: string
+      description: Human-readable name for the model
+    engine:
+      $ref: '#/AIEngine'
+    comment:
+      type:
+        - string
+        - "null"
+      description: Comment displayed to user when model is selected
+    icon:
+      type:
+        - string
+        - "null"
+      description: Optional SVG icon (overrides engine default icon)
     context_window:
-      type: integer
-      nullable: true
+      type:
+        - integer
+        - "null"
     max_output_tokens:
-      type: integer
-      nullable: true
+      type:
+        - integer
+        - "null"
     supports_streaming:
       type: boolean
     supports_tools:
       type: boolean
     supports_vision:
       type: boolean
+      description: Whether the model supports image inputs
+    supports_pdf_native:
+      type: boolean
+      description: Whether the model supports native PDF processing
+    supports_web_search:
+      type: boolean
+      description: Whether the model supports web search
+    max_images:
+      type:
+        - integer
+        - "null"
+      description: Maximum number of images supported per request
     pricing:
-      type: object
+      type:
+        - object
+        - "null"
       properties:
         input:
           type: number
@@ -204,8 +266,8 @@ ModelInfo:
           type: number
           format: float
           description: Price per 1M output tokens in USD
-      nullable: true
 
+# Provider info with nested models for /models endpoint
 ProviderInfo:
   type: object
   required:
@@ -215,11 +277,14 @@ ProviderInfo:
   properties:
     key:
       type: string
+      description: Provider identifier (same as AIEngine)
     name:
       type: string
+      description: Human-readable provider name
     icon:
-      type: string
-      nullable: true
+      type:
+        - string
+        - "null"
     status:
       type: string
       enum:

@@ -1,0 +1,297 @@
+# Platform onboarding flow
+
+/onboarding/start:
+  post:
+    tags:
+    - auth
+    summary: Start onboarding
+    description: |
+      Initialize platform onboarding flow. Creates a new organization and begins the setup wizard.
+      Only available when no organization exists (fresh deployment).
+    operationId: startOnboarding
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/OnboardingStartRequest'
+    responses:
+      '201':
+        description: Onboarding session created
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/OnboardingStartResponse'
+      '400':
+        description: Terms not accepted
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Error'
+      '409':
+        $ref: '../openapi.yaml#/components/responses/Conflict'
+
+/onboarding/status:
+  get:
+    tags:
+    - auth
+    summary: Get onboarding status
+    description: Check current onboarding progress and state
+    operationId: getOnboardingStatus
+    security: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/OnboardingToken'
+    responses:
+      '200':
+        description: Current onboarding status
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/OnboardingStatus'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/InvalidOnboardingToken'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+
+/onboarding/organization:
+  post:
+    tags:
+    - auth
+    summary: Set organization details
+    description: Configure organization name, domain, and company information
+    operationId: setOnboardingOrganization
+    security: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/OnboardingToken'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/OrganizationSetupRequest'
+    responses:
+      '200':
+        description: Organization configured
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/OnboardingStatus'
+      '400':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/ValidationError'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/InvalidOnboardingToken'
+
+/onboarding/admin:
+  post:
+    tags:
+    - auth
+    summary: Create super admin
+    description: |
+      Create the super admin account with email/password authentication.
+      This account cannot use SSO and serves as the platform's root administrator.
+    operationId: createSuperAdmin
+    security: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/OnboardingToken'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/SuperAdminCreateRequest'
+    responses:
+      '201':
+        description: Super admin created
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/OnboardingStatus'
+      '400':
+        description: Validation error (weak password, etc.)
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/ValidationError'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/InvalidOnboardingToken'
+      '409':
+        $ref: '../openapi.yaml#/components/responses/Conflict'
+
+/onboarding/providers:
+  post:
+    tags:
+    - auth
+    summary: Configure LLM providers
+    description: Set up API keys for LLM providers (OpenAI, Anthropic, Groq)
+    operationId: configureOnboardingProviders
+    security: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/OnboardingToken'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/LlmProviderSetupRequest'
+    responses:
+      '200':
+        description: Providers configured
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/OnboardingStatus'
+      '400':
+        description: Validation error or invalid API key
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Error'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/InvalidOnboardingToken'
+
+/onboarding/providers/validate:
+  post:
+    tags:
+    - auth
+    summary: Validate API key
+    description: Test if an LLM provider API key is valid before saving
+    operationId: validateOnboardingApiKey
+    security: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/OnboardingToken'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/ValidateApiKeyRequest'
+    responses:
+      '200':
+        description: Validation result
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/ValidateApiKeyResponse'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/InvalidOnboardingToken'
+
+/onboarding/sso:
+  post:
+    tags:
+    - auth
+    summary: Configure SSO (optional)
+    description: |
+      Configure SSO/OIDC provider for organization users.
+      Can be skipped and configured later from admin panel.
+    operationId: configureOnboardingSso
+    security: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/OnboardingToken'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/OnboardingSsoRequest'
+    responses:
+      '200':
+        description: SSO configured or skipped
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/OnboardingStatus'
+      '400':
+        description: Invalid SSO configuration
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Error'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/InvalidOnboardingToken'
+
+/onboarding/sso/test:
+  post:
+    tags:
+    - auth
+    summary: Test SSO configuration
+    description: Verify OIDC discovery endpoint and credentials before saving
+    operationId: testOnboardingSso
+    security: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/OnboardingToken'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/OnboardingSsoRequest'
+    responses:
+      '200':
+        description: Test result
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                message:
+                  type: string
+                discovered_endpoints:
+                  type: object
+                  properties:
+                    authorization_endpoint:
+                      type: string
+                    token_endpoint:
+                      type: string
+                    userinfo_endpoint:
+                      type: string
+                    jwks_uri:
+                      type: string
+      '401':
+        $ref: '../openapi.yaml#/components/responses/InvalidOnboardingToken'
+
+/onboarding/complete:
+  post:
+    tags:
+    - auth
+    summary: Complete onboarding
+    description: |
+      Finalize the onboarding process. Returns recovery codes for the super admin account.
+      **Important:** Recovery codes are only shown once - user must save them securely.
+    operationId: completeOnboarding
+    security: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/OnboardingToken'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - confirm_recovery_codes
+            properties:
+              confirm_recovery_codes:
+                type: boolean
+                description: User confirms they have saved recovery codes
+    responses:
+      '200':
+        description: Onboarding complete
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/OnboardingCompleteResponse'
+      '400':
+        description: Onboarding steps not completed or confirmation not provided
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Error'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/InvalidOnboardingToken'

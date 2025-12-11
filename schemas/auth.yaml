@@ -316,13 +316,6 @@ SuperAdminCreateRequest:
       format: email
       description: Optional recovery email (must differ from primary)
 
-ApiKeyProvider:
-  type: string
-  enum:
-    - openai
-    - anthropic
-    - groq
-
 LlmProviderSetupRequest:
   type: object
   required:
@@ -339,14 +332,14 @@ LlmProviderSetupRequest:
           - api_key
         properties:
           provider:
-            $ref: '#/ApiKeyProvider'
+            $ref: 'common.yaml#/AIEngine'
           api_key:
             type: string
           name:
             type: string
       minItems: 1
     default_provider:
-      $ref: '#/ApiKeyProvider'
+      $ref: 'common.yaml#/AIEngine'
     default_model:
       type: string
 
@@ -357,7 +350,7 @@ ValidateApiKeyRequest:
     - api_key
   properties:
     provider:
-      $ref: '#/ApiKeyProvider'
+      $ref: 'common.yaml#/AIEngine'
     api_key:
       type: string
 
@@ -373,8 +366,9 @@ ValidateApiKeyResponse:
       items:
         type: string
     error:
-      type: string
-      nullable: true
+      type:
+        - string
+        - "null"
 
 OnboardingSsoRequest:
   type: object

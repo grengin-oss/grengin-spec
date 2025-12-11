@@ -1,13 +1,14 @@
 openapi: 3.2.0
 info:
   title: Grengin
-  version: 1.0.0
+  version: 1.1.0
   description: AI-native business growth engine
   contact:
     name: Grengin Team
     email: support@grengin.com
   license:
     name: Dual License (Community/Enterprise)
+    url: https://grengin.com/license
 servers:
 - url: http://localhost:3000
   description: Mock server
@@ -113,8 +114,10 @@ components:
       $ref: 'schemas/auth.yaml#/OrganizationSetupRequest'
     SuperAdminCreateRequest:
       $ref: 'schemas/auth.yaml#/SuperAdminCreateRequest'
-    ApiKeyProvider:
-      $ref: 'schemas/auth.yaml#/ApiKeyProvider'
+    AIEngine:
+      $ref: 'schemas/common.yaml#/AIEngine'
+    AIModelParameter:
+      $ref: 'schemas/common.yaml#/AIModelParameter'
     LlmProviderSetupRequest:
       $ref: 'schemas/auth.yaml#/LlmProviderSetupRequest'
     ValidateApiKeyRequest:
@@ -181,16 +184,30 @@ components:
       $ref: 'schemas/chat.yaml#/ConversationList'
 
     # Admin schemas
+    AIModel:
+      $ref: 'schemas/admin.yaml#/AIModel'
+    AIModelCreate:
+      $ref: 'schemas/admin.yaml#/AIModelCreate'
+    AIModelUpdate:
+      $ref: 'schemas/admin.yaml#/AIModelUpdate'
+    AIEngineDetail:
+      $ref: 'schemas/admin.yaml#/AIEngineDetail'
+    AIEngineUpdate:
+      $ref: 'schemas/admin.yaml#/AIEngineUpdate'
+    AIEngineValidateResponse:
+      $ref: 'schemas/admin.yaml#/AIEngineValidateResponse'
+    AIEngineModelsResponse:
+      $ref: 'schemas/admin.yaml#/AIEngineModelsResponse'
+    UserModelAccess:
+      $ref: 'schemas/admin.yaml#/UserModelAccess'
+    UserModelAccessUpdate:
+      $ref: 'schemas/admin.yaml#/UserModelAccessUpdate'
     Organization:
       $ref: 'schemas/admin.yaml#/Organization'
     OrganizationSettings:
       $ref: 'schemas/admin.yaml#/OrganizationSettings'
     OrganizationUpdate:
       $ref: 'schemas/admin.yaml#/OrganizationUpdate'
-    ApiKey:
-      $ref: 'schemas/admin.yaml#/ApiKey'
-    ApiKeyCreate:
-      $ref: 'schemas/admin.yaml#/ApiKeyCreate'
     RateLimitScope:
       $ref: 'schemas/admin.yaml#/RateLimitScope'
     RateLimitConfig:
@@ -310,14 +327,6 @@ components:
         type: string
         format: uuid
       description: Unique identifier for the SSO provider
-    KeyId:
-      name: key_id
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
-      description: Unique identifier for the API key
     LimitId:
       name: limit_id
       in: path
@@ -334,6 +343,20 @@ components:
         type: string
         format: uuid
       description: Unique identifier for the budget
+    EngineKey:
+      name: engine_key
+      in: path
+      required: true
+      schema:
+        type: string
+      description: AI engine identifier (e.g., 'openai', 'anthropic', 'groq')
+      examples:
+        openai:
+          value: openai
+        anthropic:
+          value: anthropic
+        groq:
+          value: groq
     OnboardingToken:
       name: X-Onboarding-Token
       in: header
@@ -382,25 +405,27 @@ paths:
   /chat/{chat_id}:
     $ref: 'paths/chat.yaml#/~1chat~1%7Bchat_id%7D'
 
-  # Auth paths
+  # Onboarding paths
   /onboarding/start:
-    $ref: 'paths/auth.yaml#/~1onboarding~1start'
+    $ref: 'paths/onboarding.yaml#/~1onboarding~1start'
   /onboarding/status:
-    $ref: 'paths/auth.yaml#/~1onboarding~1status'
+    $ref: 'paths/onboarding.yaml#/~1onboarding~1status'
   /onboarding/organization:
-    $ref: 'paths/auth.yaml#/~1onboarding~1organization'
+    $ref: 'paths/onboarding.yaml#/~1onboarding~1organization'
   /onboarding/admin:
-    $ref: 'paths/auth.yaml#/~1onboarding~1admin'
+    $ref: 'paths/onboarding.yaml#/~1onboarding~1admin'
   /onboarding/providers:
-    $ref: 'paths/auth.yaml#/~1onboarding~1providers'
+    $ref: 'paths/onboarding.yaml#/~1onboarding~1providers'
   /onboarding/providers/validate:
-    $ref: 'paths/auth.yaml#/~1onboarding~1providers~1validate'
+    $ref: 'paths/onboarding.yaml#/~1onboarding~1providers~1validate'
   /onboarding/sso:
-    $ref: 'paths/auth.yaml#/~1onboarding~1sso'
+    $ref: 'paths/onboarding.yaml#/~1onboarding~1sso'
   /onboarding/sso/test:
-    $ref: 'paths/auth.yaml#/~1onboarding~1sso~1test'
+    $ref: 'paths/onboarding.yaml#/~1onboarding~1sso~1test'
   /onboarding/complete:
-    $ref: 'paths/auth.yaml#/~1onboarding~1complete'
+    $ref: 'paths/onboarding.yaml#/~1onboarding~1complete'
+
+  # Auth paths
   /auth/login:
     $ref: 'paths/auth.yaml#/~1auth~1login'
   /auth/{provider}:
@@ -439,12 +464,16 @@ paths:
     $ref: 'paths/admin.yaml#/~1admin~1users~1%7Buser_id%7D~1usage'
   /admin/organization:
     $ref: 'paths/admin.yaml#/~1admin~1organization'
-  /admin/api-keys:
-    $ref: 'paths/admin.yaml#/~1admin~1api-keys'
-  /admin/api-keys/{key_id}:
-    $ref: 'paths/admin.yaml#/~1admin~1api-keys~1%7Bkey_id%7D'
-  /admin/api-keys/{key_id}/validate:
-    $ref: 'paths/admin.yaml#/~1admin~1api-keys~1%7Bkey_id%7D~1validate'
+  /admin/ai-engines:
+    $ref: 'paths/admin.yaml#/~1admin~1ai-engines'
+  /admin/ai-engines/{engine_key}:
+    $ref: 'paths/admin.yaml#/~1admin~1ai-engines~1%7Bengine_key%7D'
+  /admin/ai-engines/{engine_key}/validate:
+    $ref: 'paths/admin.yaml#/~1admin~1ai-engines~1%7Bengine_key%7D~1validate'
+  /admin/ai-engines/{engine_key}/models:
+    $ref: 'paths/admin.yaml#/~1admin~1ai-engines~1%7Bengine_key%7D~1models'
+  /admin/ai-engines/{engine_key}/api-key:
+    $ref: 'paths/admin.yaml#/~1admin~1ai-engines~1%7Bengine_key%7D~1api-key'
   /admin/sso-providers:
     $ref: 'paths/admin.yaml#/~1admin~1sso-providers'
   /admin/sso-providers/{provider_id}:

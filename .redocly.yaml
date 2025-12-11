@@ -1,5 +1,5 @@
 # Redocly configuration for OpenAPI 3.2
-# Note: schemas use `nullable: true` (3.0 style) - migrate to type arrays when ready
+# Schemas use OpenAPI 3.1+ style: type arrays for nullable (e.g., type: [string, "null"])
 
 apis:
   main:

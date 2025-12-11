@@ -144,28 +144,35 @@ AuditLog:
     action:
       $ref: '#/AuditAction'
     user_id:
-      type: string
+      type:
+        - string
+        - "null"
       format: uuid
-      nullable: true
     user_email:
-      type: string
-      nullable: true
+      type:
+        - string
+        - "null"
     resource_type:
-      type: string
-      nullable: true
+      type:
+        - string
+        - "null"
     resource_id:
-      type: string
-      nullable: true
+      type:
+        - string
+        - "null"
     details:
-      type: object
+      type:
+        - object
+        - "null"
       description: Additional details about the action
-      nullable: true
     ip_address:
-      type: string
-      nullable: true
+      type:
+        - string
+        - "null"
     user_agent:
-      type: string
-      nullable: true
+      type:
+        - string
+        - "null"
     timestamp:
       type: string
       format: date-time

@@ -158,6 +158,7 @@
     tags:
     - admin
     summary: Get user details
+    description: Get detailed information about a specific user by their ID
     operationId: getUser
     security:
     - bearerAuth: []
@@ -180,6 +181,7 @@
     tags:
     - admin
     summary: Update user
+    description: Update user details including role, status, and department
     operationId: updateUser
     security:
     - bearerAuth: []
@@ -210,6 +212,7 @@
     tags:
     - admin
     summary: Deactivate user
+    description: Deactivate a user account (does not permanently delete)
     operationId: deactivateUser
     security:
     - bearerAuth: []
@@ -230,6 +233,7 @@
     tags:
     - admin
     summary: Get user usage
+    description: Get usage statistics for a specific user over a time period
     operationId: getUserUsage
     security:
     - bearerAuth: []
@@ -261,6 +265,7 @@
     tags:
     - admin
     summary: Get organization settings
+    description: Get current organization settings including SSO providers and AI engine configurations
     operationId: getOrganization
     security:
     - bearerAuth: []
@@ -279,6 +284,7 @@
     tags:
     - admin
     summary: Update organization settings
+    description: Update organization settings including allowed domains and AI engine configurations
     operationId: updateOrganization
     security:
     - bearerAuth: []
@@ -302,68 +308,83 @@
       '403':
         $ref: '../openapi.yaml#/components/responses/Forbidden'
 
-# API keys
-/admin/api-keys:
+# AI Engines - consolidated management for engine config, API keys, and model whitelist
+/admin/ai-engines:
   get:
     tags:
     - admin
-    summary: List API keys
-    operationId: listApiKeys
+    summary: List AI engines
+    description: |
+      List all AI engines with their configuration and API key status.
+      Returns both enabled and disabled engines for complete visibility.
+    operationId: listAIEngines
     security:
     - bearerAuth: []
     responses:
       '200':
-        description: List of API keys
+        description: List of AI engines with their configuration
         content:
           application/json:
             schema:
               type: array
               items:
-                $ref: '../openapi.yaml#/components/schemas/ApiKey'
-      '401':
-        $ref: '../openapi.yaml#/components/responses/Unauthorized'
-      '403':
-        $ref: '../openapi.yaml#/components/responses/Forbidden'
-  post:
-    tags:
-    - admin
-    summary: Add API key
-    operationId: createApiKey
-    security:
-    - bearerAuth: []
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '../openapi.yaml#/components/schemas/ApiKeyCreate'
-    responses:
-      '201':
-        description: API key added
-        content:
-          application/json:
-            schema:
-              $ref: '../openapi.yaml#/components/schemas/ApiKey'
-      '400':
-        $ref: '../openapi.yaml#/components/responses/BadRequest'
+                $ref: '../openapi.yaml#/components/schemas/AIEngineDetail'
       '401':
         $ref: '../openapi.yaml#/components/responses/Unauthorized'
       '403':
         $ref: '../openapi.yaml#/components/responses/Forbidden'
 
-/admin/api-keys/{key_id}:
-  delete:
+/admin/ai-engines/{engine_key}:
+  get:
     tags:
     - admin
-    summary: Delete API key
-    operationId: deleteApiKey
+    summary: Get AI engine details
+    description: Get detailed configuration for a specific AI engine
+    operationId: getAIEngine
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '../openapi.yaml#/components/parameters/KeyId'
+    - $ref: '../openapi.yaml#/components/parameters/EngineKey'
     responses:
-      '204':
-        description: API key deleted
+      '200':
+        description: AI engine details
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/AIEngineDetail'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+  put:
+    tags:
+    - admin
+    summary: Update AI engine
+    description: |
+      Update AI engine configuration including enable/disable, API key, and model whitelist.
+      Setting api_key will replace the existing key. Omit to keep current key.
+    operationId: updateAIEngine
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/EngineKey'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/AIEngineUpdate'
+    responses:
+      '200':
+        description: Updated AI engine configuration
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/AIEngineDetail'
+      '400':
+        $ref: '../openapi.yaml#/components/responses/BadRequest'
       '401':
         $ref: '../openapi.yaml#/components/responses/Unauthorized'
       '403':
@@ -371,28 +392,89 @@
       '404':
         $ref: '../openapi.yaml#/components/responses/NotFound'
 
-/admin/api-keys/{key_id}/validate:
+/admin/ai-engines/{engine_key}/validate:
   post:
     tags:
     - admin
-    summary: Validate API key
-    operationId: validateApiKey
+    summary: Validate AI engine API key
+    description: Test the configured API key by making a validation request to the provider
+    operationId: validateAIEngineKey
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '../openapi.yaml#/components/parameters/KeyId'
+    - $ref: '../openapi.yaml#/components/parameters/EngineKey'
     responses:
       '200':
         description: Validation result
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                valid:
-                  type: boolean
-                message:
-                  type: string
+              $ref: '../openapi.yaml#/components/schemas/AIEngineValidateResponse'
+      '400':
+        description: No API key configured for this engine
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Error'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+
+/admin/ai-engines/{engine_key}/models:
+  get:
+    tags:
+    - admin
+    summary: Fetch available models from provider
+    description: |
+      Query the AI provider's API to get a list of available models.
+      Requires a valid API key to be configured for this engine.
+      Returns models with their whitelist status.
+    operationId: getAIEngineModels
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/EngineKey'
+    responses:
+      '200':
+        description: List of available models from the provider
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/AIEngineModelsResponse'
+      '400':
+        description: No API key configured or API key invalid
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Error'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+
+/admin/ai-engines/{engine_key}/api-key:
+  delete:
+    tags:
+    - admin
+    summary: Remove AI engine API key
+    description: Remove the configured API key from this engine (disables the engine)
+    operationId: deleteAIEngineKey
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/EngineKey'
+    responses:
+      '200':
+        description: API key removed, engine disabled
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/AIEngineDetail'
       '401':
         $ref: '../openapi.yaml#/components/responses/Unauthorized'
       '403':
@@ -406,6 +488,7 @@
     tags:
     - admin
     summary: List SSO providers
+    description: List all configured SSO/OIDC providers for the organization
     operationId: listSsoProviders
     security:
     - bearerAuth: []
@@ -426,6 +509,7 @@
     tags:
     - admin
     summary: Add SSO provider
+    description: Configure a new SSO/OIDC provider for the organization
     operationId: createSsoProvider
     security:
     - bearerAuth: []
@@ -454,6 +538,7 @@
     tags:
     - admin
     summary: Get SSO provider
+    description: Get configuration details for a specific SSO provider
     operationId: getSsoProvider
     security:
     - bearerAuth: []
@@ -476,6 +561,7 @@
     tags:
     - admin
     summary: Update SSO provider
+    description: Update configuration for an existing SSO provider
     operationId: updateSsoProvider
     security:
     - bearerAuth: []
@@ -506,6 +592,7 @@
     tags:
     - admin
     summary: Delete SSO provider
+    description: Remove an SSO provider configuration from the organization
     operationId: deleteSsoProvider
     security:
     - bearerAuth: []
@@ -526,6 +613,7 @@
     tags:
     - admin
     summary: Test SSO provider
+    description: Test SSO provider configuration by checking OIDC discovery endpoints
     operationId: testSsoProvider
     security:
     - bearerAuth: []
@@ -570,6 +658,7 @@
     tags:
     - admin
     summary: List rate limit configurations
+    description: List all rate limit configurations for users, departments, or organization
     operationId: listRateLimits
     security:
     - bearerAuth: []
@@ -595,6 +684,7 @@
     tags:
     - admin
     summary: Create rate limit
+    description: Create a new rate limit configuration for a user, department, or organization
     operationId: createRateLimit
     security:
     - bearerAuth: []
@@ -623,6 +713,7 @@
     tags:
     - admin
     summary: Update rate limit
+    description: Update an existing rate limit configuration
     operationId: updateRateLimit
     security:
     - bearerAuth: []
@@ -653,6 +744,7 @@
     tags:
     - admin
     summary: Delete rate limit
+    description: Remove a rate limit configuration
     operationId: deleteRateLimit
     security:
     - bearerAuth: []
@@ -674,6 +766,7 @@
     tags:
     - admin
     summary: List budgets
+    description: List all budget configurations for users, departments, or organization
     operationId: listBudgets
     security:
     - bearerAuth: []
@@ -699,6 +792,7 @@
     tags:
     - admin
     summary: Create budget
+    description: Create a new budget configuration with spending limits and alerts
     operationId: createBudget
     security:
     - bearerAuth: []
@@ -727,6 +821,7 @@
     tags:
     - admin
     summary: Update budget
+    description: Update an existing budget configuration
     operationId: updateBudget
     security:
     - bearerAuth: []
@@ -757,6 +852,7 @@
     tags:
     - admin
     summary: Delete budget
+    description: Remove a budget configuration
     operationId: deleteBudget
     security:
     - bearerAuth: []

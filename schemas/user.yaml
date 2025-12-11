@@ -43,8 +43,9 @@ User:
     status:
       $ref: '#/UserStatus'
     department:
-      type: string
-      nullable: true
+      type:
+        - string
+        - "null"
     is_super_admin:
       type: boolean
       description: Super admin has full platform control and cannot be deleted
@@ -55,13 +56,15 @@ User:
       type: boolean
       description: Whether MFA is enabled for this user
     last_login_at:
-      type: string
+      type:
+        - string
+        - "null"
       format: date-time
-      nullable: true
     password_changed_at:
-      type: string
+      type:
+        - string
+        - "null"
       format: date-time
-      nullable: true
     created_at:
       type: string
       format: date-time

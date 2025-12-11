@@ -1,5 +1,327 @@
 # Admin domain schemas - Organization, API Keys, Rate Limits, Budgets
 
+# Full AI Model with admin-specific fields (references ModelInfo from common.yaml)
+AIModel:
+  type: object
+  required:
+    - id
+    - model_name
+    - display_name
+    - engine
+  properties:
+    id:
+      type: string
+      format: uuid
+    model_name:
+      type: string
+      description: Model identifier used with APIs (e.g., gpt-4.1, claude-sonnet-4-20250514)
+    display_name:
+      type: string
+      description: Human-readable name for the model
+    engine:
+      $ref: 'common.yaml#/AIEngine'
+    parameters:
+      type: array
+      items:
+        $ref: 'common.yaml#/AIModelParameter'
+      description: Configurable parameters for the model
+    comment:
+      type:
+        - string
+        - "null"
+      description: Comment displayed to user when model is selected
+    icon:
+      type:
+        - string
+        - "null"
+      description: Optional SVG icon (overrides engine default icon)
+    is_active:
+      type: boolean
+      default: true
+      description: Whether the model is available for use
+    supports_vision:
+      type: boolean
+      default: false
+      description: Whether the model supports image inputs
+    supports_pdf_native:
+      type: boolean
+      default: false
+      description: Whether the model supports native PDF processing
+    supports_web_search:
+      type: boolean
+      default: false
+      description: Whether the model supports web search
+    max_images:
+      type:
+        - integer
+        - "null"
+      description: Maximum number of images supported per request
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+  example:
+    id: 550e8400-e29b-41d4-a716-446655440000
+    model_name: claude-sonnet-4-20250514
+    display_name: Claude Sonnet 4
+    engine: anthropic
+    is_active: true
+    supports_vision: true
+    supports_pdf_native: true
+    supports_web_search: false
+    max_images: 20
+
+AIModelCreate:
+  type: object
+  required:
+    - model_name
+    - display_name
+    - engine
+  properties:
+    model_name:
+      type: string
+    display_name:
+      type: string
+    engine:
+      $ref: 'common.yaml#/AIEngine'
+    parameters:
+      type: array
+      items:
+        $ref: 'common.yaml#/AIModelParameter'
+    comment:
+      type: string
+    icon:
+      type: string
+    is_active:
+      type: boolean
+      default: true
+    supports_vision:
+      type: boolean
+      default: false
+    supports_pdf_native:
+      type: boolean
+      default: false
+    supports_web_search:
+      type: boolean
+      default: false
+    max_images:
+      type: integer
+
+AIModelUpdate:
+  type: object
+  properties:
+    model_name:
+      type: string
+    display_name:
+      type: string
+    engine:
+      $ref: 'common.yaml#/AIEngine'
+    parameters:
+      type: array
+      items:
+        $ref: 'common.yaml#/AIModelParameter'
+    comment:
+      type: string
+    icon:
+      type: string
+    is_active:
+      type: boolean
+    supports_vision:
+      type: boolean
+    supports_pdf_native:
+      type: boolean
+    supports_web_search:
+      type: boolean
+    max_images:
+      type: integer
+
+# AI Engine - consolidated resource for engine config, API key, and model whitelist
+AIEngineDetail:
+  type: object
+  required:
+    - engine_key
+    - display_name
+    - is_enabled
+    - api_key_configured
+  properties:
+    engine_key:
+      type: string
+      description: Unique identifier for the engine (e.g., 'openai', 'anthropic', 'groq')
+    display_name:
+      type: string
+      description: Human-readable name for the engine
+    is_enabled:
+      type: boolean
+      description: Whether this engine is enabled for the organization
+    api_key_configured:
+      type: boolean
+      description: Whether an API key has been set for this engine
+    api_key_status:
+      type: string
+      enum:
+        - valid
+        - invalid
+        - untested
+      description: Status of the configured API key
+    api_key_preview:
+      type:
+        - string
+        - "null"
+      description: Last 4 characters of the configured API key
+    api_key_last_validated_at:
+      type:
+        - string
+        - "null"
+      format: date-time
+      description: When the API key was last validated
+    whitelisted_models:
+      type: array
+      items:
+        type: string
+      description: |
+        Global whitelist of model_name values allowed for this engine.
+        Empty array means all models from this engine are allowed.
+    default_model:
+      type:
+        - string
+        - "null"
+      description: Default model for this engine
+    updated_at:
+      type:
+        - string
+        - "null"
+      format: date-time
+  example:
+    engine_key: openai
+    display_name: OpenAI
+    is_enabled: true
+    api_key_configured: true
+    api_key_status: valid
+    api_key_preview: "sk-...abc1"
+    api_key_last_validated_at: "2025-01-15T10:30:00Z"
+    whitelisted_models:
+      - gpt-4.1
+      - gpt-4.1-mini
+      - o3
+    default_model: gpt-4.1
+
+AIEngineUpdate:
+  type: object
+  description: Request body for updating an AI engine configuration
+  properties:
+    is_enabled:
+      type: boolean
+      description: Enable or disable this engine
+    api_key:
+      type: string
+      description: The API key (write-only, for setting or rotating)
+    whitelisted_models:
+      type: array
+      items:
+        type: string
+      description: Models to whitelist for this engine
+    default_model:
+      type: string
+      description: Default model for this engine
+
+AIEngineValidateResponse:
+  type: object
+  required:
+    - valid
+  properties:
+    valid:
+      type: boolean
+    message:
+      type: string
+    models_available:
+      type: integer
+      description: Number of models available with this API key
+  example:
+    valid: true
+    message: API key validated successfully
+    models_available: 15
+
+AIEngineModelsResponse:
+  type: object
+  required:
+    - models
+  properties:
+    models:
+      type: array
+      items:
+        type: object
+        properties:
+          model_id:
+            type: string
+            description: Model identifier from the provider
+          display_name:
+            type: string
+          is_whitelisted:
+            type: boolean
+            description: Whether this model is in the whitelist
+          capabilities:
+            type: object
+            properties:
+              vision:
+                type: boolean
+              function_calling:
+                type: boolean
+              streaming:
+                type: boolean
+  example:
+    models:
+      - model_id: gpt-4.1
+        display_name: GPT-4.1
+        is_whitelisted: true
+        capabilities:
+          vision: true
+          function_calling: true
+          streaming: true
+
+# User-level Model Access Control
+UserModelAccess:
+  type: object
+  required:
+    - user_id
+  properties:
+    user_id:
+      type: string
+      format: uuid
+    whitelisted_models:
+      type: array
+      items:
+        type: string
+      description: |
+        Models this user CAN access (in addition to global whitelist).
+        Only applies to models that exist in the global whitelist.
+    blacklisted_models:
+      type: array
+      items:
+        type: string
+      description: |
+        Models this user CANNOT access (overrides global whitelist).
+        Takes precedence over user whitelist.
+  example:
+    user_id: 550e8400-e29b-41d4-a716-446655440001
+    whitelisted_models:
+      - claude-opus-4-20250514
+    blacklisted_models:
+      - o3
+
+UserModelAccessUpdate:
+  type: object
+  properties:
+    whitelisted_models:
+      type: array
+      items:
+        type: string
+    blacklisted_models:
+      type: array
+      items:
+        type: string
+
 # Organization
 Organization:
   type: object
@@ -21,9 +343,10 @@ Organization:
         type: string
       description: List of allowed email domains
     logo_url:
-      type: string
+      type:
+        - string
+        - "null"
       format: uri
-      nullable: true
     settings:
       $ref: '#/OrganizationSettings'
     created_at:
@@ -43,19 +366,24 @@ OrganizationSettings:
       description: Enabled SSO providers
     default_model:
       type: string
-    default_provider:
+      description: Default model_name for the organization
+    default_engine:
       type: string
-    allowed_models:
-      type: array
-      items:
-        type: string
-      description: List of allowed model keys
+      description: Default AI engine for the organization
     data_retention_days:
       type: integer
       default: 90
     require_mfa:
       type: boolean
       default: false
+  example:
+    sso_providers:
+      - google
+      - keycloak
+    default_engine: anthropic
+    default_model: claude-sonnet-4-20250514
+    data_retention_days: 90
+    require_mfa: true
 
 OrganizationUpdate:
   type: object
@@ -71,55 +399,6 @@ OrganizationUpdate:
       format: uri
     settings:
       $ref: '#/OrganizationSettings'
-
-# API Keys
-ApiKey:
-  type: object
-  required:
-    - id
-    - provider
-    - name
-    - created_at
-  properties:
-    id:
-      type: string
-      format: uuid
-    provider:
-      $ref: 'auth.yaml#/ApiKeyProvider'
-    name:
-      type: string
-      description: Friendly name for the API key
-    key_preview:
-      type: string
-      description: Last 4 characters of the key
-    is_valid:
-      type: boolean
-      description: Whether the key has been validated
-    last_used_at:
-      type: string
-      format: date-time
-      nullable: true
-    created_at:
-      type: string
-      format: date-time
-    created_by:
-      type: string
-      format: uuid
-      description: User ID who created the key
-
-ApiKeyCreate:
-  type: object
-  required:
-    - provider
-    - api_key
-  properties:
-    provider:
-      $ref: 'auth.yaml#/ApiKeyProvider'
-    name:
-      type: string
-    api_key:
-      type: string
-      description: The actual API key (write-only, never returned)
 
 # Rate Limits
 RateLimitScope:
@@ -142,9 +421,10 @@ RateLimitConfig:
     scope:
       $ref: '#/RateLimitScope'
     scope_id:
-      type: string
+      type:
+        - string
+        - "null"
       description: User ID, department name, or org ID depending on scope
-      nullable: true
     requests_per_minute:
       type: integer
       minimum: 1
@@ -155,9 +435,10 @@ RateLimitConfig:
       type: integer
       minimum: 1
     tokens_per_day:
-      type: integer
+      type:
+        - integer
+        - "null"
       minimum: 1
-      nullable: true
     is_active:
       type: boolean
       default: true
@@ -177,8 +458,9 @@ RateLimitConfigCreate:
     scope:
       $ref: '#/RateLimitScope'
     scope_id:
-      type: string
-      nullable: true
+      type:
+        - string
+        - "null"
     requests_per_minute:
       type: integer
       minimum: 1
@@ -189,9 +471,10 @@ RateLimitConfigCreate:
       type: integer
       minimum: 1
     tokens_per_day:
-      type: integer
+      type:
+        - integer
+        - "null"
       minimum: 1
-      nullable: true
 
 RateLimitStatus:
   type: object
@@ -201,11 +484,13 @@ RateLimitStatus:
     requests_limit:
       type: integer
     tokens_remaining:
-      type: integer
-      nullable: true
+      type:
+        - integer
+        - "null"
     tokens_limit:
-      type: integer
-      nullable: true
+      type:
+        - integer
+        - "null"
     reset_at:
       type: string
       format: date-time
@@ -232,8 +517,9 @@ Budget:
     scope:
       $ref: '#/RateLimitScope'
     scope_id:
-      type: string
-      nullable: true
+      type:
+        - string
+        - "null"
     limit_amount:
       type: number
       format: float
@@ -287,8 +573,9 @@ BudgetCreate:
     scope:
       $ref: '#/RateLimitScope'
     scope_id:
-      type: string
-      nullable: true
+      type:
+        - string
+        - "null"
     limit_amount:
       type: number
       format: float
