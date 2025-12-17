@@ -1,7 +1,7 @@
 openapi: 3.2.0
 info:
   title: Grengin
-  version: 1.1.0
+  version: 1.1.1
   description: AI-native business growth engine
   contact:
     name: Grengin Team
@@ -156,6 +156,8 @@ components:
       $ref: 'schemas/user.yaml#/UserCreate'
     UserUpdate:
       $ref: 'schemas/user.yaml#/UserUpdate'
+    UserStatusUpdate:
+      $ref: 'schemas/user.yaml#/UserStatusUpdate'
     UserBulkImport:
       $ref: 'schemas/user.yaml#/UserBulkImport'
     UserBulkImportResult:
@@ -460,8 +462,12 @@ paths:
     $ref: 'paths/admin.yaml#/~1admin~1users~1bulk'
   /admin/users/{user_id}:
     $ref: 'paths/admin.yaml#/~1admin~1users~1%7Buser_id%7D'
+  /admin/users/{user_id}/status:
+    $ref: 'paths/admin.yaml#/~1admin~1users~1%7Buser_id%7D~1status'
   /admin/users/{user_id}/usage:
     $ref: 'paths/admin.yaml#/~1admin~1users~1%7Buser_id%7D~1usage'
+  /admin/departments:
+    $ref: 'paths/admin.yaml#/~1admin~1departments'
   /admin/organization:
     $ref: 'paths/admin.yaml#/~1admin~1organization'
   /admin/ai-engines:

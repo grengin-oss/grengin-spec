@@ -25,7 +25,8 @@
     summary: List available models
     description: Get list of available AI models by provider
     operationId: listModels
-    security: []
+    security:
+    - bearerAuth: []
     responses:
       '200':
         description: List of providers and models
@@ -38,6 +39,8 @@
                   type: array
                   items:
                     $ref: '../openapi.yaml#/components/schemas/ProviderInfo'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
 
 # User settings
 /settings:

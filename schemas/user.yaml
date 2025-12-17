@@ -99,6 +99,14 @@ UserUpdate:
     department:
       type: string
 
+UserStatusUpdate:
+  type: object
+  required:
+    - status
+  properties:
+    status:
+      $ref: '#/UserStatus'
+
 UserBulkImport:
   type: object
   required:

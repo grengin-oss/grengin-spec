@@ -228,6 +228,39 @@
       '404':
         $ref: '../openapi.yaml#/components/responses/NotFound'
 
+/admin/users/{user_id}/status:
+  patch:
+    tags:
+    - admin
+    summary: Update user status
+    description: Activate or deactivate a user account
+    operationId: updateUserStatus
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/UserId'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/UserStatusUpdate'
+    responses:
+      '200':
+        description: Updated user
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/User'
+      '400':
+        $ref: '../openapi.yaml#/components/responses/BadRequest'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+
 /admin/users/{user_id}/usage:
   get:
     tags:
@@ -258,6 +291,45 @@
         $ref: '../openapi.yaml#/components/responses/Forbidden'
       '404':
         $ref: '../openapi.yaml#/components/responses/NotFound'
+
+# Departments
+/admin/departments:
+  get:
+    tags:
+    - admin
+    summary: List departments
+    description: Get list of all departments in the organization
+    operationId: listDepartments
+    security:
+    - bearerAuth: []
+    responses:
+      '200':
+        description: List of departments
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - departments
+              properties:
+                departments:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - name
+                      - user_count
+                    properties:
+                      name:
+                        type: string
+                        description: Department name
+                      user_count:
+                        type: integer
+                        description: Number of users in this department
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
 
 # Organization
 /admin/organization:
