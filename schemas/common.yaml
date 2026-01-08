@@ -334,3 +334,58 @@ UserSettings:
     language:
       type: string
       default: en
+
+# Branding schemas
+Branding:
+  type: object
+  description: Platform branding configuration
+  properties:
+    name:
+      type: string
+      description: Platform name (white-label support)
+      default: 'Grengin'
+      maxLength: 100
+    logo_url:
+      type:
+        - string
+        - "null"
+      format: uri
+    color_primary:
+      type: string
+      pattern: '^#[0-9A-Fa-f]{6}$'
+      default: '#4079c5'
+    color_accent:
+      type: string
+      pattern: '^#[0-9A-Fa-f]{6}$'
+      default: '#2d906b'
+    font_family:
+      type: string
+      default: 'Coustard'
+      maxLength: 50
+  required:
+    - name
+    - color_primary
+    - color_accent
+    - font_family
+
+BrandingUpdate:
+  type: object
+  description: Branding update (all fields optional)
+  properties:
+    name:
+      type: string
+      maxLength: 100
+    logo_url:
+      type:
+        - string
+        - "null"
+      format: uri
+    color_primary:
+      type: string
+      pattern: '^#[0-9A-Fa-f]{6}$'
+    color_accent:
+      type: string
+      pattern: '^#[0-9A-Fa-f]{6}$'
+    font_family:
+      type: string
+      maxLength: 50

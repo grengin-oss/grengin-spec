@@ -42,10 +42,14 @@ User:
       $ref: '#/UserRole'
     status:
       $ref: '#/UserStatus'
-    department:
+    department_id:
       type:
         - string
         - "null"
+      format: uuid
+    department_name:
+      type: string
+      readOnly: true
     is_super_admin:
       type: boolean
       description: Super admin has full platform control and cannot be deleted
@@ -84,8 +88,9 @@ UserCreate:
       type: string
     role:
       $ref: '#/UserRole'
-    department:
+    department_id:
       type: string
+      format: uuid
 
 UserUpdate:
   type: object
@@ -96,8 +101,9 @@ UserUpdate:
       $ref: '#/UserRole'
     status:
       $ref: '#/UserStatus'
-    department:
+    department_id:
       type: string
+      format: uuid
 
 UserStatusUpdate:
   type: object

@@ -398,7 +398,7 @@ OnboardingCompleteResponse:
   required:
     - success
     - recovery_codes
-    - organization
+    - branding
     - super_admin
   properties:
     success:
@@ -408,8 +408,8 @@ OnboardingCompleteResponse:
       items:
         type: string
       description: 10 single-use recovery codes (store securely!)
-    organization:
-      $ref: 'admin.yaml#/Organization'
+    branding:
+      $ref: 'common.yaml#/Branding'
     super_admin:
       $ref: 'user.yaml#/User'
     login_url:

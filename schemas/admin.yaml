@@ -56,6 +56,10 @@ AIModel:
         - integer
         - "null"
       description: Maximum number of images supported per request
+    is_default:
+      type: boolean
+      description: Default model for this engine
+      default: false
     created_at:
       type: string
       format: date-time
@@ -68,6 +72,7 @@ AIModel:
     display_name: Claude Sonnet 4
     engine: anthropic
     is_active: true
+    is_default: false
     supports_vision: true
     supports_pdf_native: true
     supports_web_search: false
@@ -152,6 +157,9 @@ AIEngineDetail:
     display_name:
       type: string
       description: Human-readable name for the engine
+    icon:
+      type: string
+      description: SVG icon for the engine
     is_enabled:
       type: boolean
       description: Whether this engine is enabled for the organization
@@ -188,6 +196,10 @@ AIEngineDetail:
         - string
         - "null"
       description: Default model for this engine
+    is_default:
+      type: boolean
+      description: Organization's default engine
+      default: false
     updated_at:
       type:
         - string
@@ -196,6 +208,8 @@ AIEngineDetail:
   example:
     engine_key: openai
     display_name: OpenAI
+    is_default: false
+    icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">...</svg>'
     is_enabled: true
     api_key_configured: true
     api_key_status: valid
@@ -321,84 +335,6 @@ UserModelAccessUpdate:
       type: array
       items:
         type: string
-
-# Organization
-Organization:
-  type: object
-  required:
-    - id
-    - name
-  properties:
-    id:
-      type: string
-      format: uuid
-    name:
-      type: string
-    domain:
-      type: string
-      description: Primary domain for SSO
-    allowed_domains:
-      type: array
-      items:
-        type: string
-      description: List of allowed email domains
-    logo_url:
-      type:
-        - string
-        - "null"
-      format: uri
-    settings:
-      $ref: '#/OrganizationSettings'
-    created_at:
-      type: string
-      format: date-time
-    updated_at:
-      type: string
-      format: date-time
-
-OrganizationSettings:
-  type: object
-  properties:
-    sso_providers:
-      type: array
-      items:
-        $ref: 'auth.yaml#/AuthProvider'
-      description: Enabled SSO providers
-    default_model:
-      type: string
-      description: Default model_name for the organization
-    default_engine:
-      type: string
-      description: Default AI engine for the organization
-    data_retention_days:
-      type: integer
-      default: 90
-    require_mfa:
-      type: boolean
-      default: false
-  example:
-    sso_providers:
-      - google
-      - keycloak
-    default_engine: anthropic
-    default_model: claude-sonnet-4-20250514
-    data_retention_days: 90
-    require_mfa: true
-
-OrganizationUpdate:
-  type: object
-  properties:
-    name:
-      type: string
-    allowed_domains:
-      type: array
-      items:
-        type: string
-    logo_url:
-      type: string
-      format: uri
-    settings:
-      $ref: '#/OrganizationSettings'
 
 # Rate Limits
 RateLimitScope:
@@ -619,6 +555,224 @@ BudgetStatus:
         - ok
         - warning
         - exceeded
+
+# Department schemas
+Department:
+  type: object
+  required:
+    - id
+    - name
+    - depth
+    - member_count
+    - child_count
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+      maxLength: 100
+    description:
+      type:
+        - string
+        - "null"
+      maxLength: 500
+    parent_id:
+      type:
+        - string
+        - "null"
+      format: uuid
+      description: Null for root-level departments
+    path:
+      type: string
+      readOnly: true
+      description: Materialized path (e.g., "/sales/apac/india")
+    depth:
+      type: integer
+      readOnly: true
+      description: Depth in hierarchy (0 = root)
+    leader_ids:
+      type: array
+      items:
+        type: string
+        format: uuid
+      description: Users who can manage this department
+    member_count:
+      type: integer
+      readOnly: true
+      description: Direct members in this department
+    total_member_count:
+      type: integer
+      readOnly: true
+      description: All members including sub-departments
+    child_count:
+      type: integer
+      readOnly: true
+      description: Direct child departments
+    budget_allocated:
+      type:
+        - number
+        - "null"
+      format: float
+      description: Budget allocated (USD)
+    budget_distributed:
+      type: number
+      format: float
+      readOnly: true
+      description: Budget allocated to sub-departments
+    budget_available:
+      type: number
+      format: float
+      readOnly: true
+      description: budget_allocated - budget_distributed
+    budget_used:
+      type: number
+      format: float
+      readOnly: true
+      description: Actual spend by this department
+    budget_period:
+      $ref: '#/BudgetPeriod'
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+
+DepartmentCreate:
+  type: object
+  required:
+    - name
+  properties:
+    name:
+      type: string
+      maxLength: 100
+    description:
+      type: string
+      maxLength: 500
+    parent_id:
+      type:
+        - string
+        - "null"
+      format: uuid
+    leader_ids:
+      type: array
+      items:
+        type: string
+        format: uuid
+
+DepartmentUpdate:
+  type: object
+  properties:
+    name:
+      type: string
+      maxLength: 100
+    description:
+      type: string
+      maxLength: 500
+    leader_ids:
+      type: array
+      items:
+        type: string
+        format: uuid
+
+DepartmentTree:
+  allOf:
+    - $ref: '#/Department'
+    - type: object
+      properties:
+        children:
+          type: array
+          items:
+            $ref: '#/DepartmentTree'
+
+DepartmentBudgetAllocation:
+  type: object
+  required:
+    - budget_allocated
+  properties:
+    budget_allocated:
+      type: number
+      format: float
+      minimum: 0
+    budget_period:
+      $ref: '#/BudgetPeriod'
+      default: monthly
+    action_on_exceed:
+      type: string
+      enum: [warn, throttle, block]
+      default: warn
+
+DepartmentBudgetStatus:
+  type: object
+  properties:
+    department_id:
+      type: string
+      format: uuid
+    budget_allocated:
+      type: number
+      format: float
+    budget_distributed:
+      type: number
+      format: float
+    budget_available:
+      type: number
+      format: float
+    budget_used:
+      type: number
+      format: float
+    budget_used_total:
+      type: number
+      format: float
+      description: Including sub-departments
+    period:
+      $ref: '#/BudgetPeriod'
+    period_start:
+      type: string
+      format: date-time
+    period_end:
+      type: string
+      format: date-time
+    sub_department_budgets:
+      type: array
+      items:
+        type: object
+        properties:
+          department_id:
+            type: string
+            format: uuid
+          name:
+            type: string
+          allocated:
+            type: number
+            format: float
+          used:
+            type: number
+            format: float
+
+DepartmentMove:
+  type: object
+  required:
+    - new_parent_id
+  properties:
+    new_parent_id:
+      type:
+        - string
+        - "null"
+      format: uuid
+      description: New parent ID (null for root)
+
+DepartmentMembersRequest:
+  type: object
+  required:
+    - user_ids
+  properties:
+    user_ids:
+      type: array
+      items:
+        type: string
+        format: uuid
+      minItems: 1
 
 # Admin Dashboard
 AdminDashboard:

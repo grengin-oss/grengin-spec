@@ -292,16 +292,77 @@
       '404':
         $ref: '../openapi.yaml#/components/responses/NotFound'
 
+# Branding
+/admin/branding:
+  get:
+    tags:
+      - admin
+    summary: Get branding settings
+    description: Get current platform branding configuration including name, logo, colors, and font
+    operationId: getAdminBranding
+    security:
+      - bearerAuth: []
+    responses:
+      '200':
+        description: Branding configuration
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Branding'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+
+  put:
+    tags:
+      - admin
+    summary: Update branding settings
+    description: Update platform branding configuration (white-label support)
+    operationId: updateBranding
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/BrandingUpdate'
+    responses:
+      '200':
+        description: Updated branding
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Branding'
+      '400':
+        $ref: '../openapi.yaml#/components/responses/BadRequest'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+
 # Departments
 /admin/departments:
   get:
     tags:
     - admin
     summary: List departments
-    description: Get list of all departments in the organization
+    description: Get list of departments with optional filtering
     operationId: listDepartments
     security:
     - bearerAuth: []
+    parameters:
+    - name: parent_id
+      in: query
+      schema:
+        type: string
+      description: Filter by parent (use 'root' for top-level)
+    - name: include_children
+      in: query
+      schema:
+        type: boolean
+        default: false
     responses:
       '200':
         description: List of departments
@@ -309,55 +370,23 @@
           application/json:
             schema:
               type: object
-              required:
-                - departments
               properties:
                 departments:
                   type: array
                   items:
-                    type: object
-                    required:
-                      - name
-                      - user_count
-                    properties:
-                      name:
-                        type: string
-                        description: Department name
-                      user_count:
-                        type: integer
-                        description: Number of users in this department
+                    $ref: '../openapi.yaml#/components/schemas/Department'
+                total:
+                  type: integer
       '401':
         $ref: '../openapi.yaml#/components/responses/Unauthorized'
       '403':
         $ref: '../openapi.yaml#/components/responses/Forbidden'
-
-# Organization
-/admin/organization:
-  get:
+  post:
     tags:
     - admin
-    summary: Get organization settings
-    description: Get current organization settings including SSO providers and AI engine configurations
-    operationId: getOrganization
-    security:
-    - bearerAuth: []
-    responses:
-      '200':
-        description: Organization settings
-        content:
-          application/json:
-            schema:
-              $ref: '../openapi.yaml#/components/schemas/Organization'
-      '401':
-        $ref: '../openapi.yaml#/components/responses/Unauthorized'
-      '403':
-        $ref: '../openapi.yaml#/components/responses/Forbidden'
-  put:
-    tags:
-    - admin
-    summary: Update organization settings
-    description: Update organization settings including allowed domains and AI engine configurations
-    operationId: updateOrganization
+    summary: Create department
+    description: Create a new department in the organization hierarchy
+    operationId: createDepartment
     security:
     - bearerAuth: []
     requestBody:
@@ -365,20 +394,343 @@
       content:
         application/json:
           schema:
-            $ref: '../openapi.yaml#/components/schemas/OrganizationUpdate'
+            $ref: '../openapi.yaml#/components/schemas/DepartmentCreate'
     responses:
-      '200':
-        description: Updated organization
+      '201':
+        description: Department created
         content:
           application/json:
             schema:
-              $ref: '../openapi.yaml#/components/schemas/Organization'
+              $ref: '../openapi.yaml#/components/schemas/Department'
       '400':
         $ref: '../openapi.yaml#/components/responses/BadRequest'
       '401':
         $ref: '../openapi.yaml#/components/responses/Unauthorized'
       '403':
         $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '409':
+        $ref: '../openapi.yaml#/components/responses/Conflict'
+
+/admin/departments/tree:
+  get:
+    tags:
+    - admin
+    summary: Get department hierarchy
+    description: Get departments as a nested tree structure
+    operationId: getDepartmentTree
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: root_id
+      in: query
+      description: "Start from this department (default: entire org)"
+      schema:
+        type: string
+        format: uuid
+    - name: max_depth
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 10
+        default: 10
+    responses:
+      '200':
+        description: Department tree
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tree:
+                  type: array
+                  items:
+                    $ref: '../openapi.yaml#/components/schemas/DepartmentTree'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+
+/admin/departments/{department_id}:
+  get:
+    tags:
+    - admin
+    summary: Get department
+    description: Get details for a specific department
+    operationId: getDepartment
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/DepartmentId'
+    responses:
+      '200':
+        description: Department details
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Department'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+  put:
+    tags:
+    - admin
+    summary: Update department
+    description: Update department name, description, or leaders
+    operationId: updateDepartment
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/DepartmentId'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/DepartmentUpdate'
+    responses:
+      '200':
+        description: Updated department
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Department'
+      '400':
+        $ref: '../openapi.yaml#/components/responses/BadRequest'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+  delete:
+    tags:
+    - admin
+    summary: Delete department
+    description: Delete a department. Use force=true to reassign members to parent.
+    operationId: deleteDepartment
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/DepartmentId'
+    - name: force
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: Force delete (reassign members to parent)
+    responses:
+      '204':
+        description: Department deleted
+      '400':
+        description: Cannot delete (has members or children)
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Error'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+
+/admin/departments/{department_id}/move:
+  post:
+    tags:
+    - admin
+    summary: Move department in hierarchy
+    description: Move a department to a new parent (or to root level)
+    operationId: moveDepartment
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/DepartmentId'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/DepartmentMove'
+    responses:
+      '200':
+        description: Department moved
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Department'
+      '400':
+        description: Invalid move (circular reference)
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Error'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+
+/admin/departments/{department_id}/budget:
+  get:
+    tags:
+    - admin
+    summary: Get department budget status
+    description: Get budget allocation and usage for a department
+    operationId: getDepartmentBudget
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/DepartmentId'
+    responses:
+      '200':
+        description: Budget status
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/DepartmentBudgetStatus'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+  put:
+    tags:
+    - admin
+    summary: Set department budget
+    description: Allocate budget to a department
+    operationId: setDepartmentBudget
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/DepartmentId'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/DepartmentBudgetAllocation'
+    responses:
+      '200':
+        description: Budget updated
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Department'
+      '400':
+        description: Exceeds parent's available budget
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Error'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+
+/admin/departments/{department_id}/members:
+  get:
+    tags:
+    - admin
+    summary: List department members
+    description: Get users assigned to this department
+    operationId: listDepartmentMembers
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/DepartmentId'
+    - name: include_sub_departments
+      in: query
+      schema:
+        type: boolean
+        default: false
+    responses:
+      '200':
+        description: Department members
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                members:
+                  type: array
+                  items:
+                    $ref: '../openapi.yaml#/components/schemas/User'
+                total:
+                  type: integer
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+  post:
+    tags:
+    - admin
+    summary: Add members to department
+    description: Assign users to this department
+    operationId: addDepartmentMembers
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/DepartmentId'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/DepartmentMembersRequest'
+    responses:
+      '200':
+        description: Members added
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Department'
+      '400':
+        $ref: '../openapi.yaml#/components/responses/BadRequest'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+  delete:
+    tags:
+    - admin
+    summary: Remove members from department
+    description: Unassign users from this department
+    operationId: removeDepartmentMembers
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../openapi.yaml#/components/parameters/DepartmentId'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../openapi.yaml#/components/schemas/DepartmentMembersRequest'
+    responses:
+      '200':
+        description: Members removed
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Department'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '403':
+        $ref: '../openapi.yaml#/components/responses/Forbidden'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
 
 # AI Engines - consolidated management for engine config, API keys, and model whitelist
 /admin/ai-engines:
@@ -554,6 +906,61 @@
       '404':
         $ref: '../openapi.yaml#/components/responses/NotFound'
 
+/admin/ai-engines/{engine_key}/default:
+  put:
+    tags:
+      - admin
+    summary: Set default AI engine
+    description: Set this engine as the organization's default AI engine
+    operationId: setDefaultEngine
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../openapi.yaml#/components/parameters/EngineKey'
+    responses:
+      '200':
+        description: Engine set as default
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/AIEngineDetail'
+      '400':
+        $ref: '../openapi.yaml#/components/responses/BadRequest'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+
+/admin/ai-engines/{engine_key}/models/{model_id}/default:
+  put:
+    tags:
+      - admin
+    summary: Set default model
+    description: Set this model as the default for the specified AI engine
+    operationId: setDefaultModel
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../openapi.yaml#/components/parameters/EngineKey'
+      - name: model_id
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Model set as default
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/AIModel'
+      '400':
+        $ref: '../openapi.yaml#/components/responses/BadRequest'
+      '401':
+        $ref: '../openapi.yaml#/components/responses/Unauthorized'
+      '404':
+        $ref: '../openapi.yaml#/components/responses/NotFound'
+
 # SSO providers
 /admin/sso-providers:
   get:
@@ -573,33 +980,6 @@
               type: array
               items:
                 $ref: '../openapi.yaml#/components/schemas/OidcProviderConfig'
-      '401':
-        $ref: '../openapi.yaml#/components/responses/Unauthorized'
-      '403':
-        $ref: '../openapi.yaml#/components/responses/Forbidden'
-  post:
-    tags:
-    - admin
-    summary: Add SSO provider
-    description: Configure a new SSO/OIDC provider for the organization
-    operationId: createSsoProvider
-    security:
-    - bearerAuth: []
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '../openapi.yaml#/components/schemas/OidcProviderConfigCreate'
-    responses:
-      '201':
-        description: SSO provider configured
-        content:
-          application/json:
-            schema:
-              $ref: '../openapi.yaml#/components/schemas/OidcProviderConfig'
-      '400':
-        $ref: '../openapi.yaml#/components/responses/BadRequest'
       '401':
         $ref: '../openapi.yaml#/components/responses/Unauthorized'
       '403':

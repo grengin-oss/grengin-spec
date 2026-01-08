@@ -1,7 +1,7 @@
 openapi: 3.2.0
 info:
   title: Grengin
-  version: 1.1.1
+  version: 1.2.0
   description: AI-native business growth engine
   contact:
     name: Grengin Team
@@ -82,6 +82,10 @@ components:
       $ref: 'schemas/common.yaml#/ModelSettings'
     UserSettings:
       $ref: 'schemas/common.yaml#/UserSettings'
+    Branding:
+      $ref: 'schemas/common.yaml#/Branding'
+    BrandingUpdate:
+      $ref: 'schemas/common.yaml#/BrandingUpdate'
 
     # Auth schemas
     AuthProvider:
@@ -204,12 +208,6 @@ components:
       $ref: 'schemas/admin.yaml#/UserModelAccess'
     UserModelAccessUpdate:
       $ref: 'schemas/admin.yaml#/UserModelAccessUpdate'
-    Organization:
-      $ref: 'schemas/admin.yaml#/Organization'
-    OrganizationSettings:
-      $ref: 'schemas/admin.yaml#/OrganizationSettings'
-    OrganizationUpdate:
-      $ref: 'schemas/admin.yaml#/OrganizationUpdate'
     RateLimitScope:
       $ref: 'schemas/admin.yaml#/RateLimitScope'
     RateLimitConfig:
@@ -228,6 +226,22 @@ components:
       $ref: 'schemas/admin.yaml#/BudgetStatus'
     AdminDashboard:
       $ref: 'schemas/admin.yaml#/AdminDashboard'
+    Department:
+      $ref: 'schemas/admin.yaml#/Department'
+    DepartmentCreate:
+      $ref: 'schemas/admin.yaml#/DepartmentCreate'
+    DepartmentUpdate:
+      $ref: 'schemas/admin.yaml#/DepartmentUpdate'
+    DepartmentTree:
+      $ref: 'schemas/admin.yaml#/DepartmentTree'
+    DepartmentBudgetAllocation:
+      $ref: 'schemas/admin.yaml#/DepartmentBudgetAllocation'
+    DepartmentBudgetStatus:
+      $ref: 'schemas/admin.yaml#/DepartmentBudgetStatus'
+    DepartmentMove:
+      $ref: 'schemas/admin.yaml#/DepartmentMove'
+    DepartmentMembersRequest:
+      $ref: 'schemas/admin.yaml#/DepartmentMembersRequest'
 
     # Analytics schemas
     CostSummary:
@@ -373,9 +387,19 @@ components:
       schema:
         $ref: '#/components/schemas/AuthProvider'
       description: SSO/OIDC provider identifier
+    DepartmentId:
+      name: department_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique identifier for the department
 
 paths:
-  # Common paths (health, models, settings, files)
+  # Common paths (health, models, settings, files, branding)
+  /branding:
+    $ref: 'paths/common.yaml#/~1branding'
   /health:
     $ref: 'paths/common.yaml#/~1health'
   /models:
@@ -468,8 +492,18 @@ paths:
     $ref: 'paths/admin.yaml#/~1admin~1users~1%7Buser_id%7D~1usage'
   /admin/departments:
     $ref: 'paths/admin.yaml#/~1admin~1departments'
-  /admin/organization:
-    $ref: 'paths/admin.yaml#/~1admin~1organization'
+  /admin/departments/tree:
+    $ref: 'paths/admin.yaml#/~1admin~1departments~1tree'
+  /admin/departments/{department_id}:
+    $ref: 'paths/admin.yaml#/~1admin~1departments~1%7Bdepartment_id%7D'
+  /admin/departments/{department_id}/move:
+    $ref: 'paths/admin.yaml#/~1admin~1departments~1%7Bdepartment_id%7D~1move'
+  /admin/departments/{department_id}/budget:
+    $ref: 'paths/admin.yaml#/~1admin~1departments~1%7Bdepartment_id%7D~1budget'
+  /admin/departments/{department_id}/members:
+    $ref: 'paths/admin.yaml#/~1admin~1departments~1%7Bdepartment_id%7D~1members'
+  /admin/branding:
+    $ref: 'paths/admin.yaml#/~1admin~1branding'
   /admin/ai-engines:
     $ref: 'paths/admin.yaml#/~1admin~1ai-engines'
   /admin/ai-engines/{engine_key}:
@@ -480,6 +514,10 @@ paths:
     $ref: 'paths/admin.yaml#/~1admin~1ai-engines~1%7Bengine_key%7D~1models'
   /admin/ai-engines/{engine_key}/api-key:
     $ref: 'paths/admin.yaml#/~1admin~1ai-engines~1%7Bengine_key%7D~1api-key'
+  /admin/ai-engines/{engine_key}/default:
+    $ref: 'paths/admin.yaml#/~1admin~1ai-engines~1%7Bengine_key%7D~1default'
+  /admin/ai-engines/{engine_key}/models/{model_id}/default:
+    $ref: 'paths/admin.yaml#/~1admin~1ai-engines~1%7Bengine_key%7D~1models~1%7Bmodel_id%7D~1default'
   /admin/sso-providers:
     $ref: 'paths/admin.yaml#/~1admin~1sso-providers'
   /admin/sso-providers/{provider_id}:

@@ -1,4 +1,21 @@
-# Common paths - health, models, files, settings
+# Common paths - health, models, files, settings, branding
+
+# Branding (public)
+/branding:
+  get:
+    tags:
+      - settings
+    summary: Get platform branding
+    description: Public endpoint for UI theming (login page, etc.)
+    operationId: getBranding
+    security: []
+    responses:
+      '200':
+        description: Branding configuration
+        content:
+          application/json:
+            schema:
+              $ref: '../openapi.yaml#/components/schemas/Branding'
 
 # Health check
 /health:
