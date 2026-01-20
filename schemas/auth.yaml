@@ -77,22 +77,26 @@ OidcProviderConfig:
     - provider
     - client_id
     - issuer_url
+    - editable_fields
   properties:
     id:
       type: string
       format: uuid
+      readOnly: true
     provider:
       $ref: '#/AuthProvider'
+      readOnly: true
+      description: Provider identifier (immutable after creation)
     name:
       type: string
       description: Display name for this provider
     client_id:
       type: string
       description: OAuth 2.0 Client ID
-    client_secret:
-      type: string
-      description: OAuth 2.0 Client Secret (write-only, never returned)
-      writeOnly: true
+    client_secret_configured:
+      type: boolean
+      readOnly: true
+      description: Whether a client secret has been configured
     issuer_url:
       type: string
       format: uri
@@ -127,12 +131,31 @@ OidcProviderConfig:
       type: boolean
       default: false
       description: Use as the default SSO provider
+    editable_fields:
+      type: array
+      items:
+        type: string
+      readOnly: true
+      description: |
+        List of field names that can be modified via PUT requests.
+        Only changes to these fields will be respected; other fields are ignored.
+      example:
+        - name
+        - client_id
+        - client_secret
+        - issuer_url
+        - scopes
+        - allowed_domains
+        - is_enabled
+        - is_default
     created_at:
       type: string
       format: date-time
+      readOnly: true
     updated_at:
       type: string
       format: date-time
+      readOnly: true
 
 OidcProviderConfigCreate:
   type: object
@@ -167,6 +190,43 @@ OidcProviderConfigCreate:
     is_default:
       type: boolean
       default: false
+
+OidcProviderConfigUpdate:
+  type: object
+  description: |
+    Update an existing SSO provider configuration.
+    Only fields listed in editable_fields from GET response will be respected.
+    All fields are optional; omit fields to leave them unchanged.
+  properties:
+    name:
+      type: string
+      description: Display name for this provider
+    client_id:
+      type: string
+      description: OAuth 2.0 Client ID
+    client_secret:
+      type: string
+      description: OAuth 2.0 Client Secret (set to update, omit to keep existing)
+    issuer_url:
+      type: string
+      format: uri
+      description: OIDC Issuer URL for discovery
+    scopes:
+      type: array
+      items:
+        type: string
+      description: OAuth scopes to request
+    allowed_domains:
+      type: array
+      items:
+        type: string
+      description: Restrict login to users from these email domains
+    is_enabled:
+      type: boolean
+      description: Enable or disable this provider
+    is_default:
+      type: boolean
+      description: Use as the default SSO provider
 
 # Onboarding schemas
 OnboardingStep:

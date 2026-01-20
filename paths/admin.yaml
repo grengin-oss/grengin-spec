@@ -990,7 +990,10 @@
     tags:
     - admin
     summary: Get SSO provider
-    description: Get configuration details for a specific SSO provider
+    description: |
+      Get configuration details for a specific SSO provider.
+      The response includes an `editable_fields` array indicating which fields
+      can be modified via PUT requests.
     operationId: getSsoProvider
     security:
     - bearerAuth: []
@@ -1013,7 +1016,11 @@
     tags:
     - admin
     summary: Update SSO provider
-    description: Update configuration for an existing SSO provider
+    description: |
+      Update configuration for an existing SSO provider.
+      Only fields listed in `editable_fields` from the GET response will be
+      modified; changes to other fields (e.g., `id`, `provider`, `created_at`)
+      are ignored. Omit fields to leave them unchanged.
     operationId: updateSsoProvider
     security:
     - bearerAuth: []
@@ -1024,7 +1031,7 @@
       content:
         application/json:
           schema:
-            $ref: '../openapi.yaml#/components/schemas/OidcProviderConfigCreate'
+            $ref: '../openapi.yaml#/components/schemas/OidcProviderConfigUpdate'
     responses:
       '200':
         description: Updated SSO provider

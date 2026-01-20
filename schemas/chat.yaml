@@ -212,3 +212,60 @@ ConversationList:
         $ref: '#/Conversation'
     total:
       type: integer
+
+# SSE Event Schemas for chat streaming
+StreamEventConversation:
+  type: object
+  description: Initial event with conversation metadata
+  required:
+    - id
+    - title
+    - is_new
+  properties:
+    id:
+      type: string
+      format: uuid
+    title:
+      type: string
+    is_new:
+      type: boolean
+      description: True if this is a newly created conversation
+
+StreamEventMessageStart:
+  type: object
+  description: Indicates the start of an assistant message
+  required:
+    - message_id
+  properties:
+    message_id:
+      type: string
+      format: uuid
+
+StreamEventDelta:
+  type: object
+  description: Incremental text content
+  required:
+    - text
+  properties:
+    text:
+      type: string
+
+StreamEventMessageEnd:
+  type: object
+  description: End of message with usage statistics
+  required:
+    - input_tokens
+    - output_tokens
+    - latency_ms
+  properties:
+    input_tokens:
+      type: integer
+    output_tokens:
+      type: integer
+    latency_ms:
+      type: integer
+      description: Total response latency in milliseconds
+
+StreamEventDone:
+  type: object
+  description: Stream completion marker

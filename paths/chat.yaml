@@ -46,7 +46,46 @@
     tags:
     - chat
     summary: Stream chat response
-    description: Send a message and receive streaming response via SSE
+    description: |
+      Send a message and receive streaming response via SSE.
+
+      ## Event Sequence
+
+      1. `conversation` - Conversation metadata (sent once at start)
+      2. `message_start` - Indicates assistant message beginning
+      3. `delta` - Text chunks (sent multiple times)
+      4. `message_end` - Usage statistics
+      5. `done` - Stream completion
+
+      ## Event Format
+
+      Each event follows the SSE format:
+      ```
+      event: <event_type>
+      data: <json_payload>
+      ```
+
+      ## Example Stream
+
+      ```
+      event: conversation
+      data: {"id": "uuid", "title": "...", "is_new": true}
+
+      event: message_start
+      data: {"message_id": "uuid"}
+
+      event: delta
+      data: {"text": "Hello"}
+
+      event: delta
+      data: {"text": " world"}
+
+      event: message_end
+      data: {"input_tokens": 100, "output_tokens": 25, "latency_ms": 450}
+
+      event: done
+      data: {}
+      ```
     operationId: streamChat
     security:
     - bearerAuth: []
@@ -58,11 +97,18 @@
             $ref: '../openapi.yaml#/components/schemas/ChatRequest'
     responses:
       '200':
-        description: Streaming response
+        description: Streaming response via Server-Sent Events
         content:
           text/event-stream:
             schema:
               type: string
+              description: |
+                SSE stream with the following event types:
+                - `conversation`: StreamEventConversation
+                - `message_start`: StreamEventMessageStart
+                - `delta`: StreamEventDelta
+                - `message_end`: StreamEventMessageEnd
+                - `done`: StreamEventDone
       '400':
         $ref: '../openapi.yaml#/components/responses/BadRequest'
       '401':

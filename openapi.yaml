@@ -1,7 +1,7 @@
 openapi: 3.2.0
 info:
   title: Grengin
-  version: 1.2.0
+  version: 1.2.1
   description: AI-native business growth engine
   contact:
     name: Grengin Team
@@ -102,6 +102,8 @@ components:
       $ref: 'schemas/auth.yaml#/OidcProviderConfig'
     OidcProviderConfigCreate:
       $ref: 'schemas/auth.yaml#/OidcProviderConfigCreate'
+    OidcProviderConfigUpdate:
+      $ref: 'schemas/auth.yaml#/OidcProviderConfigUpdate'
     OnboardingStep:
       $ref: 'schemas/auth.yaml#/OnboardingStep'
     OnboardingStatus:
@@ -188,6 +190,17 @@ components:
       $ref: 'schemas/chat.yaml#/ChatRequest'
     ConversationList:
       $ref: 'schemas/chat.yaml#/ConversationList'
+    # Chat streaming event schemas
+    StreamEventConversation:
+      $ref: 'schemas/chat.yaml#/StreamEventConversation'
+    StreamEventMessageStart:
+      $ref: 'schemas/chat.yaml#/StreamEventMessageStart'
+    StreamEventDelta:
+      $ref: 'schemas/chat.yaml#/StreamEventDelta'
+    StreamEventMessageEnd:
+      $ref: 'schemas/chat.yaml#/StreamEventMessageEnd'
+    StreamEventDone:
+      $ref: 'schemas/chat.yaml#/StreamEventDone'
 
     # Admin schemas
     AIModel:
